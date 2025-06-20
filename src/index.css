@@ -1,0 +1,201 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom CSS per PWA PADUS */
+@layer base {
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+    scroll-behavior: smooth;
+  }
+  
+  body {
+    @apply bg-gray-50 text-gray-900 antialiased;
+    font-feature-settings: 'cv11', 'ss01';
+    font-variation-settings: 'opsz' 32;
+  }
+  
+  /* Accessibilità e focus */
+  *:focus {
+    @apply outline-none ring-2 ring-primary-500 ring-offset-2;
+  }
+  
+  /* Scrollbar personalizzata */
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    @apply bg-gray-100;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    @apply bg-gray-300 rounded-full;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-400;
+  }
+}
+
+@layer components {
+  /* Pulsanti moderni */
+  .btn {
+    @apply inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  
+  .btn-primary {
+    @apply btn bg-primary-500 text-white hover:bg-primary-600 focus:ring-primary-500 shadow-md hover:shadow-lg;
+  }
+  
+  .btn-secondary {
+    @apply btn bg-secondary-500 text-white hover:bg-secondary-600 focus:ring-secondary-500 shadow-md hover:shadow-lg;
+  }
+  
+  .btn-accent {
+    @apply btn bg-accent-500 text-white hover:bg-accent-600 focus:ring-accent-500 shadow-md hover:shadow-lg;
+  }
+  
+  .btn-outline {
+    @apply btn border-2 border-gray-300 text-gray-700 hover:border-primary-500 hover:text-primary-500 focus:ring-primary-500;
+  }
+  
+  .btn-ghost {
+    @apply btn text-gray-600 hover:text-primary-500 hover:bg-gray-100;
+  }
+  
+  /* Input moderni */
+  .input {
+    @apply block w-full px-4 py-3 text-sm border border-gray-300 rounded-xl bg-white placeholder-gray-400 transition-colors duration-200 focus:border-primary-500 focus:ring-primary-500;
+  }
+  
+  .input-error {
+    @apply input border-red-300 focus:border-red-500 focus:ring-red-500;
+  }
+  
+  /* Card moderno */
+  .card {
+    @apply bg-white rounded-2xl shadow-soft border border-gray-100 overflow-hidden;
+  }
+  
+  .card-header {
+    @apply px-6 py-4 border-b border-gray-100;
+  }
+  
+  .card-body {
+    @apply px-6 py-4;
+  }
+  
+  .card-footer {
+    @apply px-6 py-4 border-t border-gray-100 bg-gray-50;
+  }
+  
+  /* Badge stati prenotazione */
+  .badge {
+    @apply inline-flex items-center px-3 py-1 text-xs font-medium rounded-full;
+  }
+  
+  .badge-pending {
+    @apply badge bg-gray-100 text-gray-800;
+  }
+  
+  .badge-confirmed {
+    @apply badge bg-green-100 text-green-800;
+  }
+  
+  .badge-rejected {
+    @apply badge bg-red-100 text-red-800;
+  }
+  
+  /* Layout responsivo */
+  .container-app {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+  
+  /* Navbar mobile-first */
+  .navbar {
+    @apply fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-200;
+  }
+  
+  /* Sidebar */
+  .sidebar {
+    @apply fixed left-0 top-16 bottom-0 w-64 bg-white border-r border-gray-200 overflow-y-auto transition-transform duration-300 transform;
+  }
+  
+  .sidebar-mobile-hidden {
+    @apply -translate-x-full lg:translate-x-0;
+  }
+  
+  /* Toast notifications */
+  .toast {
+    @apply fixed top-4 right-4 z-50 p-4 rounded-xl shadow-strong max-w-sm animate-slide-in;
+  }
+  
+  .toast-success {
+    @apply toast bg-green-500 text-white;
+  }
+  
+  .toast-error {
+    @apply toast bg-red-500 text-white;
+  }
+  
+  .toast-info {
+    @apply toast bg-blue-500 text-white;
+  }
+  
+  /* Loading skeleton */
+  .skeleton {
+    @apply animate-pulse bg-gray-200 rounded;
+  }
+  
+  /* Calendario custom */
+  .calendar-grid {
+    @apply grid grid-cols-7 gap-px bg-gray-200 rounded-lg overflow-hidden;
+  }
+  
+  .calendar-cell {
+    @apply bg-white p-2 h-24 sm:h-32 transition-colors hover:bg-gray-50 cursor-pointer;
+  }
+  
+  .calendar-cell-today {
+    @apply calendar-cell bg-primary-50 border-2 border-primary-200;
+  }
+  
+  .calendar-cell-selected {
+    @apply calendar-cell bg-primary-100;
+  }
+}
+
+@layer utilities {
+  /* Animazioni custom */
+  .animate-fade-in-up {
+    animation: fadeInUp 0.5s ease-out;
+  }
+  
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  /* Gradient text */
+  .text-gradient {
+    @apply bg-gradient-to-r from-primary-500 to-secondary-500 bg-clip-text text-transparent;
+  }
+  
+  /* Glass effect */
+  .glass {
+    @apply backdrop-blur-sm bg-white/70 border border-white/20;
+  }
+  
+  /* Mobile-first utilities */
+  .touch-manipulation {
+    touch-action: manipulation;
+  }
+} 
