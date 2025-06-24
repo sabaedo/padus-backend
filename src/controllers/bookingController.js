@@ -1,5 +1,5 @@
 const { validationResult } = require('express-validator');
-const { Op } = require('sequelize');
+const { Op, Sequelize } = require('sequelize');
 const { Booking, User, Notification } = require('../models');
 const notificationService = require('../services/notificationService');
 const { getFileInfo } = require('../middleware/upload');
@@ -155,7 +155,8 @@ const getBookings = async (req, res) => {
         // Se non è UUID, cerca per campo diverso o salta il filtro
         console.log('🔄 Tentativo recupero tutte le prenotazioni per utente non-UUID');
       } else {
-        where.creatoId = userId;
+        // 🔧 CAST ESPLICITO per PostgreSQL: Converte string UUID a tipo UUID
+        where.creatoId = Sequelize.cast(userId, 'UUID');
       }
     }
     
@@ -267,7 +268,8 @@ const getCalendarBookings = async (req, res) => {
         // Se non è UUID, cerca per campo diverso o salta il filtro
         console.log('🔄 Tentativo recupero tutte le prenotazioni per utente non-UUID');
       } else {
-        where.creatoId = userId;
+        // 🔧 CAST ESPLICITO per PostgreSQL: Converte string UUID a tipo UUID
+        where.creatoId = Sequelize.cast(userId, 'UUID');
       }
     }
     

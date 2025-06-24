@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const { Sequelize } = require('sequelize');
 
 // Import models
 const { Booking } = require('../models');
@@ -198,7 +199,7 @@ router.get('/sync', async (req, res) => {
             'tipoMenu', 'allergie', 'pacchetto', 'sala', 'stato', 'note',
             'motivoRifiuto', 'allegati', 'createdAt', 'updatedAt'
           ],
-          where: { creatoId: req.user.id },
+          where: { creatoId: Sequelize.cast(req.user.id, 'UUID') },
           order: [['createdAt', 'DESC']],
           raw: true // Evita oggetti Sequelize complessi
         });
