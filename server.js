@@ -36,7 +36,11 @@ const server = createServer(app);
 // Configurazione Socket.IO per notifiche real-time
 const io = new Server(server, {
   cors: {
-    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    origin: [
+      process.env.FRONTEND_URL || "http://localhost:3000",
+      "https://animated-entremet-780fcd.netlify.app",
+      "http://localhost:3000"
+    ],
     methods: ["GET", "POST"]
   }
 });
@@ -79,9 +83,20 @@ app.use((req, res, next) => {
 });
 
 app.use(cors({
-  origin: process.env.FRONTEND_URL || "http://localhost:3000",
+  origin: [
+    process.env.FRONTEND_URL || "http://localhost:3000",
+    "https://animated-entremet-780fcd.netlify.app",
+    "http://localhost:3000"
+  ],
   credentials: true,
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Device-Id'],
+  allowedHeaders: [
+    'Content-Type', 
+    'Authorization', 
+    'X-Device-Id',
+    'Cache-Control',
+    'Pragma', 
+    'Expires'
+  ],
   exposedHeaders: ['Authorization'],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
 }));
