@@ -26,7 +26,7 @@ const {
   isAdminOrSecondary 
 } = require('../middleware/auth');
 
-const { syncLimiter } = require('../middleware/rateLimiter');
+// const { syncLimiter } = require('../middleware/rateLimiter'); // DISABILITATO RATE LIMITING
 
 const { 
   uploadMultiple, 
@@ -45,7 +45,7 @@ const {
 router.use(authenticate);
 
 // 🔄 NUOVO: Endpoint per sincronizzazione cross-device (PRIMA delle route con parametri)
-router.get('/sync', syncLimiter, async (req, res) => {
+router.get('/sync', async (req, res) => {
   try {
     console.log('🔄 SYNC ENDPOINT GET - RICHIESTA RICEVUTA:', {
       method: req.method,
@@ -117,7 +117,7 @@ router.get('/sync', syncLimiter, async (req, res) => {
 });
 
 // 🔄 NUOVO: Endpoint per push sincronizzazione
-router.post('/sync', syncLimiter, async (req, res) => {
+router.post('/sync', async (req, res) => {
   try {
     console.log('🔄 SYNC ENDPOINT POST - RICHIESTA RICEVUTA:', {
       method: req.method,
@@ -213,7 +213,7 @@ router.get('/calendar', calendarQueryValidator, getCalendarBookings);
 
 // Routes CRUD prenotazioni
 router.route('/')
-  .get(syncLimiter, getBookings) // Aggiungo syncLimiter più permissivo anche alla GET principale
+  .get(getBookings) // RIMUOVO COMPLETAMENTE RATE LIMITING dalla GET principale
   .post(
     authorizePermission('creaPrenotazioni'), 
     uploadMultiple, 
