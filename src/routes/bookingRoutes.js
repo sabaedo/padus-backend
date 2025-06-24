@@ -93,11 +93,20 @@ router.get('/sync', async (req, res) => {
     if (req.user.type === 'local-access') {
       console.log('🔍 SYNC ENDPOINT - Utente accesso diretto, carico tutte le prenotazioni');
       try {
+        // QUERY SEMPLIFICATA: Solo tabella bookings, nessun JOIN
         bookings = await Booking.findAll({
+          attributes: [
+            'id', 'tipo', 'nomeCliente', 'cognomeCliente', 'telefono', 
+            'dataPrenotazione', 'orarioArrivo', 'numeroPersone', 'numeroAdulti',
+            'numeroBambini', 'numeroNeonati', 'nomeEvento', 'numeroPartecipanti',
+            'tipoMenu', 'allergie', 'pacchetto', 'sala', 'stato', 'note',
+            'motivoRifiuto', 'allegati', 'createdAt', 'updatedAt'
+          ],
           order: [['createdAt', 'DESC']],
-          limit: 1000 // Limite ragionevole
+          limit: 1000, // Limite ragionevole
+          raw: true // Evita oggetti Sequelize complessi
         });
-        console.log('✅ SYNC ENDPOINT - Query findAll completata per accesso diretto');
+        console.log('✅ SYNC ENDPOINT - Query findAll SEMPLIFICATA completata per accesso diretto');
       } catch (dbError) {
         console.error('❌ SYNC ENDPOINT - Errore query findAll (accesso diretto):', dbError);
         throw dbError;
@@ -105,11 +114,20 @@ router.get('/sync', async (req, res) => {
     } else {
       console.log('🔍 SYNC ENDPOINT - Utente registrato, carico solo sue prenotazioni');
       try {
+        // QUERY SEMPLIFICATA: Solo tabella bookings, nessun JOIN
         bookings = await Booking.findAll({
+          attributes: [
+            'id', 'tipo', 'nomeCliente', 'cognomeCliente', 'telefono', 
+            'dataPrenotazione', 'orarioArrivo', 'numeroPersone', 'numeroAdulti',
+            'numeroBambini', 'numeroNeonati', 'nomeEvento', 'numeroPartecipanti',
+            'tipoMenu', 'allergie', 'pacchetto', 'sala', 'stato', 'note',
+            'motivoRifiuto', 'allegati', 'createdAt', 'updatedAt'
+          ],
           where: { userId: req.user.id },
-          order: [['createdAt', 'DESC']]
+          order: [['createdAt', 'DESC']],
+          raw: true // Evita oggetti Sequelize complessi
         });
-        console.log('✅ SYNC ENDPOINT - Query findAll completata per utente registrato');
+        console.log('✅ SYNC ENDPOINT - Query findAll SEMPLIFICATA completata per utente registrato');
       } catch (dbError) {
         console.error('❌ SYNC ENDPOINT - Errore query findAll (utente registrato):', dbError);
         throw dbError;
