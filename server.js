@@ -19,6 +19,7 @@ const { apiLimiter } = require('./src/middleware/rateLimiter');
 // Import services
 const notificationService = require('./src/services/notificationService');
 const cronService = require('./src/services/cronService');
+const initDatabase = require('./src/scripts/initDatabase');
 
 // Import routes
 const authRoutes = require('./src/routes/authRoutes');
@@ -223,15 +224,60 @@ async function startServer() {
     await sequelize.authenticate();
     console.log('✅ Database connesso con successo');
     
-    // Sincronizza i modelli (solo in development)
-    if (process.env.NODE_ENV === 'development') {
-      await sequelize.sync({ alter: true });
-      console.log('✅ Modelli database sincronizzati');
+    // 🔧 AUTO-INIZIALIZZAZIONE DATABASE per Railway
+    console.log('🔄 AVVIO AUTO-INIZIALIZZAZIONE DATABASE...');
+    
+    try {
+      // Sincronizza SEMPRE le tabelle (production-safe)
+      await sequelize.sync({ force: false, alter: true });
+      console.log('✅ RAILWAY - Tabelle database create/aggiornate');
+      
+      // Verifica che le tabelle siano state create
+      const tables = await sequelize.getQueryInterface().showAllTables();
+      console.log('📋 RAILWAY - Tabelle presenti:', tables);
+      
+      // Conta record esistenti per verifica
+      const { User, Booking, Notification } = require('./src/models');
+      const userCount = await User.count();
+      const bookingCount = await Booking.count();
+      const notificationCount = await Notification.count();
+      
+      console.log('📊 RAILWAY - Record esistenti:');
+      console.log(`   Users: ${userCount}`);
+      console.log(`   Bookings: ${bookingCount}`);  
+      console.log(`   Notifications: ${notificationCount}`);
+      
+      // Se non ci sono utenti, crea l'admin di default
+      if (userCount === 0) {
+        console.log('🔧 RAILWAY - Creazione utente admin di default...');
+        
+        const adminUser = await User.create({
+          nome: 'Admin',
+          cognome: 'Sistema',
+          email: 'admin@padus.com',
+          password: 'Admin123!',
+          ruolo: 'ADMIN',
+          livelloPermessi: 'AMMINISTRATORE',
+          attivo: true
+        });
+        
+        console.log('✅ RAILWAY - Utente admin creato:', adminUser.email);
+      }
+      
+      console.log('🎉 RAILWAY - Auto-inizializzazione database completata!');
+      
+    } catch (initError) {
+      console.error('⚠️ RAILWAY - Errore auto-inizializzazione (continuo comunque):', {
+        message: initError.message,
+        stack: initError.stack
+      });
+      // Non blocca l'avvio del server
     }
     
     server.listen(PORT, () => {
       console.log(`🚀 Server avviato sulla porta ${PORT}`);
       console.log(`🌐 Ambiente: ${process.env.NODE_ENV}`);
+      console.log(`🔗 URL: https://padus-backend-production.up.railway.app`);
     });
   } catch (error) {
     console.error('❌ Errore avvio server:', error);
