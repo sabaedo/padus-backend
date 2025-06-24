@@ -1,9 +1,9 @@
 const rateLimit = require('express-rate-limit');
 
-// Rate limiter generale per API (più permissivo)
+// Rate limiter generale per API (molto permissivo per risolvere 429)
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minuti
-  max: 500, // massimo 500 richieste per IP ogni 15 minuti (era 100)
+  max: 2000, // massimo 2000 richieste per IP ogni 15 minuti (era 500)
   message: {
     success: false,
     message: 'Troppe richieste da questo IP, riprova più tardi'
@@ -12,10 +12,10 @@ const apiLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-// Rate limiter specifico per sincronizzazione cross-device (molto permissivo)
+// Rate limiter specifico per sincronizzazione cross-device (estremamente permissivo)
 const syncLimiter = rateLimit({
   windowMs: 5 * 60 * 1000, // 5 minuti
-  max: 200, // massimo 200 richieste per IP ogni 5 minuti
+  max: 1000, // massimo 1000 richieste per IP ogni 5 minuti (era 200)
   message: {
     success: false,
     message: 'Troppa sincronizzazione, rallenta le richieste'
@@ -52,7 +52,7 @@ const registerLimiter = rateLimit({
 // Rate limiter per upload file
 const uploadLimiter = rateLimit({
   windowMs: 10 * 60 * 1000, // 10 minuti
-  max: 20, // massimo 20 upload per IP ogni 10 minuti
+  max: 50, // massimo 50 upload per IP ogni 10 minuti (era 20)
   message: {
     success: false,
     message: 'Troppi upload da questo IP, riprova più tardi'

@@ -213,7 +213,7 @@ router.get('/calendar', calendarQueryValidator, getCalendarBookings);
 
 // Routes CRUD prenotazioni
 router.route('/')
-  .get(getBookings)
+  .get(syncLimiter, getBookings) // Aggiungo syncLimiter più permissivo anche alla GET principale
   .post(
     authorizePermission('creaPrenotazioni'), 
     uploadMultiple, 
