@@ -7,7 +7,8 @@
     "start": "node server.js",
     "dev": "nodemon server.js",
     "seed": "node src/scripts/seedDatabase.js",
-    "test": "node src/scripts/testBackend.js"
+    "test": "node src/scripts/testBackend.js",
+    "init-db": "node src/scripts/initDatabase.js"
   },
   "keywords": ["prenotazioni", "pwa", "backend", "nodejs"],
   "author": "Edoardo Sabau",
