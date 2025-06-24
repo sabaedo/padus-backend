@@ -133,7 +133,11 @@ const getBookings = async (req, res) => {
 
     // 🔧 CORREZIONE: Controllo robusto per l'ID utente
     const permessi = req.user.getPermessiDettaglio();
-    if (!permessi.gestioneAltrui) {
+    
+    // 🆕 CROSS-DEVICE SYNC: Se è calendario, mostra tutte le prenotazioni anche per staff base
+    const isCalendar = req.path.includes('/calendar') || req.query.calendar === 'true';
+    
+    if (!permessi.gestioneAltrui && !isCalendar) {
       // Verifica che l'ID sia un UUID valido
       const userId = req.user.id;
       if (!userId) {
@@ -154,6 +158,14 @@ const getBookings = async (req, res) => {
         where.creatoId = userId;
       }
     }
+    
+    // 📊 LOG INFORMAZIONI CALENDARIO
+    console.log('📅 CALENDAR SYNC INFO:', {
+      isCalendar,
+      gestioneAltrui: permessi.gestioneAltrui,
+      willFilterByUser: !permessi.gestioneAltrui && !isCalendar,
+      path: req.path
+    });
 
     console.log('📊 QUERY BOOKING CONDITIONS:', {
       where: JSON.stringify(where),
@@ -233,7 +245,11 @@ const getCalendarBookings = async (req, res) => {
 
     // 🔧 CORREZIONE: Controllo robusto per l'ID utente
     const permessi = req.user.getPermessiDettaglio();
-    if (!permessi.gestioneAltrui) {
+    
+    // 🆕 CROSS-DEVICE SYNC: Se è una richiesta sync, mostra tutte le prenotazioni anche per staff base
+    const isSync = req.path.includes('/sync') || req.query.sync === 'true';
+    
+    if (!permessi.gestioneAltrui && !isSync) {
       // Verifica che l'ID sia un UUID valido
       const userId = req.user.id;
       if (!userId) {
@@ -254,6 +270,15 @@ const getCalendarBookings = async (req, res) => {
         where.creatoId = userId;
       }
     }
+    
+    // 📊 LOG INFORMAZIONI SYNC
+    console.log('🔄 CROSS-DEVICE SYNC INFO:', {
+      isSync,
+      gestioneAltrui: permessi.gestioneAltrui,
+      willFilterByUser: !permessi.gestioneAltrui && !isSync,
+      path: req.path,
+      syncQuery: req.query.sync
+    });
 
     // QUERY SEMPLIFICATA: Nessun JOIN per evitare errori database
     const bookings = await Booking.findAll({
