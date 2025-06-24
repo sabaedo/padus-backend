@@ -137,18 +137,24 @@ const getBookings = async (req, res) => {
       where.creatoId = req.user.id;
     }
 
+    // QUERY SEMPLIFICATA: Nessun JOIN per evitare errori database
     const { count, rows } = await Booking.findAndCountAll({
       where,
-      include: [
-        { model: User, as: 'creatore', attributes: ['id', 'nome', 'cognome', 'email'] },
-        { model: User, as: 'processatore', attributes: ['id', 'nome', 'cognome', 'email'] }
+      attributes: [
+        'id', 'tipo', 'nomeCliente', 'cognomeCliente', 'telefono', 
+        'dataPrenotazione', 'orarioArrivo', 'numeroPersone', 'numeroAdulti',
+        'numeroBambini', 'numeroNeonati', 'nomeEvento', 'numeroPartecipanti',
+        'tipoMenu', 'allergie', 'pacchetto', 'sala', 'stato', 'note',
+        'motivoRifiuto', 'allegati', 'createdAt', 'updatedAt', 'creatoId', 'processatoDa'
       ],
       order: [['dataPrenotazione', 'DESC'], ['orarioArrivo', 'DESC']],
       limit: parseInt(limit),
-      offset
+      offset,
+      raw: true // Evita oggetti Sequelize complessi
     });
 
-    const bookings = rows.map(booking => booking.getDettagliPrenotazione());
+    // Con raw: true, rows sono già oggetti semplici JavaScript
+    const bookings = rows;
 
     res.json({
       success: true,
@@ -192,12 +198,18 @@ const getCalendarBookings = async (req, res) => {
       where.creatoId = req.user.id;
     }
 
+    // QUERY SEMPLIFICATA: Nessun JOIN per evitare errori database
     const bookings = await Booking.findAll({
       where,
-      include: [
-        { model: User, as: 'creatore', attributes: ['id', 'nome', 'cognome'] }
+      attributes: [
+        'id', 'tipo', 'nomeCliente', 'cognomeCliente', 'telefono', 
+        'dataPrenotazione', 'orarioArrivo', 'numeroPersone', 'numeroAdulti',
+        'numeroBambini', 'numeroNeonati', 'nomeEvento', 'numeroPartecipanti',
+        'tipoMenu', 'allergie', 'pacchetto', 'sala', 'stato', 'note',
+        'motivoRifiuto', 'allegati', 'createdAt', 'updatedAt', 'creatoId'
       ],
-      order: [['dataPrenotazione', 'ASC'], ['orarioArrivo', 'ASC']]
+      order: [['dataPrenotazione', 'ASC'], ['orarioArrivo', 'ASC']],
+      raw: true
     });
 
     // Formatta per il calendario
