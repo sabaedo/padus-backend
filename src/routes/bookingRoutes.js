@@ -61,57 +61,92 @@ router.get('/sync', async (req, res) => {
       } : 'NO USER'
     });
     
-    console.log('🔄 SYNC ENDPOINT - Richiesta sincronizzazione da:', {
+    // CONTROLLO PRELIMINARE: Verifica che req.user esista
+    if (!req.user) {
+      console.error('❌ SYNC ENDPOINT - req.user è undefined');
+      return res.status(401).json({
+        success: false,
+        message: 'Utente non autenticato'
+      });
+    }
+    
+    console.log('✅ SYNC ENDPOINT - Utente autenticato:', {
       userId: req.user.id,
       userType: req.user.type,
       deviceId: req.headers['x-device-id']
     });
+
+    // CONTROLLO MODELLO: Verifica che Booking sia disponibile
+    if (!Booking) {
+      console.error('❌ SYNC ENDPOINT - Modello Booking non disponibile');
+      return res.status(500).json({
+        success: false,
+        message: 'Errore interno: modello Booking non disponibile'
+      });
+    }
+    
+    console.log('✅ SYNC ENDPOINT - Modello Booking disponibile');
 
     // Recupera tutte le prenotazioni dell'utente o globali per accesso diretto
     let bookings;
     
     if (req.user.type === 'local-access') {
       console.log('🔍 SYNC ENDPOINT - Utente accesso diretto, carico tutte le prenotazioni');
-      // Per accesso diretto, restituisci tutte le prenotazioni
-      bookings = await Booking.findAll({
-        order: [['createdAt', 'DESC']],
-        limit: 1000 // Limite ragionevole
-      });
+      try {
+        bookings = await Booking.findAll({
+          order: [['createdAt', 'DESC']],
+          limit: 1000 // Limite ragionevole
+        });
+        console.log('✅ SYNC ENDPOINT - Query findAll completata per accesso diretto');
+      } catch (dbError) {
+        console.error('❌ SYNC ENDPOINT - Errore query findAll (accesso diretto):', dbError);
+        throw dbError;
+      }
     } else {
       console.log('🔍 SYNC ENDPOINT - Utente registrato, carico solo sue prenotazioni');
-      // Per utenti registrati, solo le loro prenotazioni
-      bookings = await Booking.findAll({
-        where: { userId: req.user.id },
-        order: [['createdAt', 'DESC']]
-      });
+      try {
+        bookings = await Booking.findAll({
+          where: { userId: req.user.id },
+          order: [['createdAt', 'DESC']]
+        });
+        console.log('✅ SYNC ENDPOINT - Query findAll completata per utente registrato');
+      } catch (dbError) {
+        console.error('❌ SYNC ENDPOINT - Errore query findAll (utente registrato):', dbError);
+        throw dbError;
+      }
     }
 
-    console.log('🔄 SYNC ENDPOINT - Prenotazioni trovate:', bookings.length);
+    console.log('🔄 SYNC ENDPOINT - Prenotazioni trovate:', bookings ? bookings.length : 'NULL');
 
     const response = {
       success: true,
-      data: bookings,
+      data: bookings || [],
       timestamp: Date.now(),
       deviceId: req.headers['x-device-id']
     };
     
-    console.log('✅ SYNC ENDPOINT - Risposta inviata:', {
+    console.log('✅ SYNC ENDPOINT - Risposta preparata:', {
       success: response.success,
       dataCount: response.data.length,
       timestamp: response.timestamp
     });
 
     res.json(response);
+    console.log('✅ SYNC ENDPOINT - Risposta inviata con successo');
 
   } catch (error) {
     console.error('❌ SYNC ENDPOINT - Errore completo:', {
       message: error.message,
       stack: error.stack,
+      name: error.name,
+      code: error.code,
       user: req.user ? req.user.id : 'NO USER'
     });
     res.status(500).json({
       success: false,
-      message: 'Errore durante la sincronizzazione: ' + error.message
+      message: 'Errore durante la sincronizzazione: ' + error.message,
+      errorCode: error.code || 'UNKNOWN',
+      errorName: error.name || 'Unknown'
     });
   }
 });
