@@ -44,6 +44,81 @@ const {
 // Applica autenticazione a tutte le route
 router.use(authenticate);
 
+// 🔥 NUOVO: Endpoint per cancellare TUTTE le prenotazioni
+router.delete('/clear-all', async (req, res) => {
+  try {
+    console.log('🔥 CLEAR-ALL ENDPOINT - RICHIESTA RICEVUTA:', {
+      method: req.method,
+      url: req.url,
+      user: req.user ? {
+        id: req.user.id,
+        email: req.user.email,
+        type: req.user.type
+      } : 'NO USER'
+    });
+    
+    // Verifica autenticazione
+    if (!req.user) {
+      console.error('❌ CLEAR-ALL - Utente non autenticato');
+      return res.status(401).json({
+        success: false,
+        message: 'Utente non autenticato'
+      });
+    }
+    
+    // Verifica modello
+    if (!Booking) {
+      console.error('❌ CLEAR-ALL - Modello Booking non disponibile');
+      return res.status(500).json({
+        success: false,
+        message: 'Errore interno: modello Booking non disponibile'
+      });
+    }
+    
+    // Prima conta quante prenotazioni ci sono
+    const countBefore = await Booking.count();
+    console.log('🔥 CLEAR-ALL - Prenotazioni da eliminare:', countBefore);
+    
+    // Cancella TUTTE le prenotazioni
+    const deletedCount = await Booking.destroy({
+      where: {}, // Condizione vuota = cancella tutto
+      truncate: false // Non usare TRUNCATE per preservare log
+    });
+    
+    console.log('✅ CLEAR-ALL - Prenotazioni eliminate:', deletedCount);
+    
+    // Verifica che sia tutto vuoto
+    const countAfter = await Booking.count();
+    console.log('✅ CLEAR-ALL - Prenotazioni rimanenti:', countAfter);
+    
+    const response = {
+      success: true,
+      message: `Eliminate ${deletedCount} prenotazioni`,
+      deletedCount,
+      remainingCount: countAfter,
+      timestamp: Date.now()
+    };
+    
+    console.log('✅ CLEAR-ALL - Risposta preparata:', response);
+    res.json(response);
+    
+  } catch (error) {
+    console.error('❌ CLEAR-ALL - Errore completo:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name,
+      code: error.code
+    });
+    
+    res.status(500).json({
+      success: false,
+      message: 'Errore durante la cancellazione: ' + error.message,
+      errorCode: error.code || 'UNKNOWN',
+      errorName: error.name || 'Unknown'
+    });
+  }
+});
+
 // 🔄 NUOVO: Endpoint per sincronizzazione cross-device (PRIMA delle route con parametri)
 router.get('/sync', async (req, res) => {
   try {
