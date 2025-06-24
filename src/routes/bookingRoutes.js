@@ -198,7 +198,7 @@ router.get('/sync', async (req, res) => {
             'tipoMenu', 'allergie', 'pacchetto', 'sala', 'stato', 'note',
             'motivoRifiuto', 'allegati', 'createdAt', 'updatedAt'
           ],
-          where: { userId: req.user.id },
+          where: { creatoId: req.user.id },
           order: [['createdAt', 'DESC']],
           raw: true // Evita oggetti Sequelize complessi
         });
@@ -299,7 +299,7 @@ router.post('/sync', async (req, res) => {
             // Crea nuova prenotazione
             await Booking.create({
               ...bookingData,
-              userId: req.user.type === 'local-access' ? null : req.user.id,
+              creatoId: req.user.type === 'local-access' ? req.user.id : req.user.id,
               stato: bookingData.stato || 'confermata'
             });
             results.bookings.created++;

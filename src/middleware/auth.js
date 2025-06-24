@@ -44,9 +44,21 @@ const handleLocalAccess = (token, req, res, next) => {
     
     console.log('✅ MIDDLEWARE - Validazione token locale completata, creo utente virtuale');
     
+    // 🔧 CORREZIONE: Genera UUID valido per utenti locali
+    const { v4: uuidv4 } = require('uuid');
+    const validUUID = payload.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(payload.id) 
+      ? payload.id 
+      : uuidv4();
+    
+    console.log('🔧 MIDDLEWARE - ID normalizzato:', {
+      original: payload.id,
+      normalized: validUUID,
+      isUUID: /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(validUUID)
+    });
+    
     // Crea un utente virtuale per questa sessione
     req.user = {
-      id: payload.id,
+      id: validUUID,
       email: payload.email,
       nome: payload.ruolo === 'ADMIN' ? 'Amministratore' : 'Staff',
       cognome: 'Sistema',

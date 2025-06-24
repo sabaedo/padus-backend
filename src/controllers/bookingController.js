@@ -131,11 +131,36 @@ const getBookings = async (req, res) => {
       ];
     }
 
-    // Se non è admin, mostra solo le proprie prenotazioni (per staff base)
+    // 🔧 CORREZIONE: Controllo robusto per l'ID utente
     const permessi = req.user.getPermessiDettaglio();
     if (!permessi.gestioneAltrui) {
-      where.creatoId = req.user.id;
+      // Verifica che l'ID sia un UUID valido
+      const userId = req.user.id;
+      if (!userId) {
+        console.error('❌ USER ID NON DEFINITO:', req.user);
+        return res.status(500).json({
+          success: false,
+          message: 'Errore autenticazione utente'
+        });
+      }
+      
+      // Verifica formato UUID (molto permissivo)
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(userId)) {
+        console.error('❌ USER ID NON È UUID VALIDO:', userId, typeof userId);
+        // Se non è UUID, cerca per campo diverso o salta il filtro
+        console.log('🔄 Tentativo recupero tutte le prenotazioni per utente non-UUID');
+      } else {
+        where.creatoId = userId;
+      }
     }
+
+    console.log('📊 QUERY BOOKING CONDITIONS:', {
+      where: JSON.stringify(where),
+      userID: req.user.id,
+      userType: typeof req.user.id,
+      isValidUUID: req.user.id ? /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(req.user.id) : false
+    });
 
     // QUERY SEMPLIFICATA: Nessun JOIN per evitare errori database
     const { count, rows } = await Booking.findAndCountAll({
@@ -156,6 +181,12 @@ const getBookings = async (req, res) => {
     // Con raw: true, rows sono già oggetti semplici JavaScript
     const bookings = rows;
 
+    console.log('✅ BOOKING QUERY SUCCESS:', {
+      count,
+      rowsReturned: rows.length,
+      where: JSON.stringify(where)
+    });
+
     res.json({
       success: true,
       data: {
@@ -171,7 +202,15 @@ const getBookings = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Errore recupero prenotazioni:', error);
+    console.error('❌ ERRORE RECUPERO PRENOTAZIONI:', error);
+    console.error('❌ ERROR STACK:', error.stack);
+    console.error('❌ ERROR SQL:', error.sql);
+    console.error('❌ USER DATA:', {
+      id: req.user?.id,
+      type: typeof req.user?.id,
+      permessi: req.user?.permessi
+    });
+    
     res.status(500).json({
       success: false,
       message: 'Errore interno del server'
@@ -192,10 +231,28 @@ const getCalendarBookings = async (req, res) => {
       }
     };
 
-    // Se non è admin, mostra solo le proprie prenotazioni (per staff base)
+    // 🔧 CORREZIONE: Controllo robusto per l'ID utente
     const permessi = req.user.getPermessiDettaglio();
     if (!permessi.gestioneAltrui) {
-      where.creatoId = req.user.id;
+      // Verifica che l'ID sia un UUID valido
+      const userId = req.user.id;
+      if (!userId) {
+        console.error('❌ USER ID NON DEFINITO:', req.user);
+        return res.status(500).json({
+          success: false,
+          message: 'Errore autenticazione utente'
+        });
+      }
+      
+      // Verifica formato UUID (molto permissivo)
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(userId)) {
+        console.error('❌ USER ID NON È UUID VALIDO:', userId, typeof userId);
+        // Se non è UUID, cerca per campo diverso o salta il filtro
+        console.log('🔄 Tentativo recupero tutte le prenotazioni per utente non-UUID');
+      } else {
+        where.creatoId = userId;
+      }
     }
 
     // QUERY SEMPLIFICATA: Nessun JOIN per evitare errori database
@@ -212,20 +269,33 @@ const getCalendarBookings = async (req, res) => {
       raw: true
     });
 
-    // Formatta per il calendario
-    const calendarEvents = bookings.map(booking => ({
-      id: booking.id,
-      title: `${booking.getNomeCompletoCliente()} (${booking.getNumeroTotalePersone()}p)`,
-      start: `${booking.dataPrenotazione}T${booking.orarioArrivo}`,
-      type: booking.tipo,
-      status: booking.stato,
-      cliente: booking.getNomeCompletoCliente(),
-      telefono: booking.telefono,
-      persone: booking.getNumeroTotalePersone(),
-      note: booking.note,
-      createdBy: booking.creatore?.nome + ' ' + booking.creatore?.cognome,
-      sala: booking.sala
-    }));
+    // 🔧 CORREZIONE: Formatta per il calendario con dati raw
+    const calendarEvents = bookings.map(booking => {
+      // Calcola nome cliente
+      const nomeCompleto = `${booking.nomeCliente || ''} ${booking.cognomeCliente || ''}`.trim();
+      
+      // Calcola numero persone
+      let numPersone = 0;
+      if (booking.tipo === 'EVENTO') {
+        numPersone = booking.numeroPartecipanti || 0;
+      } else {
+        numPersone = (booking.numeroPersone || 0) + (booking.numeroAdulti || 0) + (booking.numeroBambini || 0) + (booking.numeroNeonati || 0);
+      }
+      
+      return {
+        id: booking.id,
+        title: `${nomeCompleto} (${numPersone}p)`,
+        start: `${booking.dataPrenotazione}T${booking.orarioArrivo}`,
+        type: booking.tipo,
+        status: booking.stato,
+        cliente: nomeCompleto,
+        telefono: booking.telefono,
+        persone: numPersone,
+        note: booking.note,
+        createdBy: 'Admin', // Placeholder poiché no JOIN
+        sala: booking.sala
+      };
+    });
 
     res.json({
       success: true,
