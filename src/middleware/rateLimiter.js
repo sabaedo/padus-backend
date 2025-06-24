@@ -1,12 +1,24 @@
 const rateLimit = require('express-rate-limit');
 
-// Rate limiter generale per API
+// Rate limiter generale per API (più permissivo)
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minuti
-  max: 100, // massimo 100 richieste per IP ogni 15 minuti
+  max: 500, // massimo 500 richieste per IP ogni 15 minuti (era 100)
   message: {
     success: false,
     message: 'Troppe richieste da questo IP, riprova più tardi'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Rate limiter specifico per sincronizzazione cross-device (molto permissivo)
+const syncLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000, // 5 minuti
+  max: 200, // massimo 200 richieste per IP ogni 5 minuti
+  message: {
+    success: false,
+    message: 'Troppa sincronizzazione, rallenta le richieste'
   },
   standardHeaders: true,
   legacyHeaders: false,
@@ -51,6 +63,7 @@ const uploadLimiter = rateLimit({
 
 module.exports = {
   apiLimiter,
+  syncLimiter,
   loginLimiter,
   registerLimiter,
   uploadLimiter

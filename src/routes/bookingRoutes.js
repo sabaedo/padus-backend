@@ -26,6 +26,8 @@ const {
   isAdminOrSecondary 
 } = require('../middleware/auth');
 
+const { syncLimiter } = require('../middleware/rateLimiter');
+
 const { 
   uploadMultiple, 
   handleUploadError 
@@ -43,7 +45,7 @@ const {
 router.use(authenticate);
 
 // 🔄 NUOVO: Endpoint per sincronizzazione cross-device (PRIMA delle route con parametri)
-router.get('/sync', async (req, res) => {
+router.get('/sync', syncLimiter, async (req, res) => {
   try {
     console.log('🔄 SYNC ENDPOINT GET - RICHIESTA RICEVUTA:', {
       method: req.method,
@@ -115,7 +117,7 @@ router.get('/sync', async (req, res) => {
 });
 
 // 🔄 NUOVO: Endpoint per push sincronizzazione
-router.post('/sync', async (req, res) => {
+router.post('/sync', syncLimiter, async (req, res) => {
   try {
     console.log('🔄 SYNC ENDPOINT POST - RICHIESTA RICEVUTA:', {
       method: req.method,
