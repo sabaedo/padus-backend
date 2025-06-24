@@ -91,8 +91,16 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Servizio file statici (uploads)
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Rate limiting
-app.use('/api/', apiLimiter);
+// Rate limiting - ESCLUSI endpoints critici per sync
+app.use('/api/', (req, res, next) => {
+  // Skip rate limiting per sync endpoints critici
+  if (req.path.startsWith('/bookings/sync') || req.path === '/bookings') {
+    console.log('🔓 RATE LIMITING BYPASSATO per:', req.path);
+    return next();
+  }
+  // Applica rate limiting per tutto il resto
+  return apiLimiter(req, res, next);
+});
 
 // Socket.IO middleware per autenticazione
 const socketAuth = require('./src/middleware/socketAuth');
