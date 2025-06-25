@@ -1,11 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const { validationResult } = require('express-validator');
-const { Sequelize } = require('sequelize');
-const { v4: uuidv4 } = require('uuid');
 
 // Import models
-const { Booking, User } = require('../models');
+const { Booking } = require('../models');
 
 // Import controllers
 const {
@@ -29,7 +26,7 @@ const {
   isAdminOrSecondary 
 } = require('../middleware/auth');
 
-// const { syncLimiter } = require('../middleware/rateLimiter'); // DISABILITATO RATE LIMITING
+const { syncLimiter } = require('../middleware/rateLimiter');
 
 const { 
   uploadMultiple, 
@@ -47,83 +44,8 @@ const {
 // Applica autenticazione a tutte le route
 router.use(authenticate);
 
-// 🔥 NUOVO: Endpoint per cancellare TUTTE le prenotazioni
-router.delete('/clear-all', async (req, res) => {
-  try {
-    console.log('🔥 CLEAR-ALL ENDPOINT - RICHIESTA RICEVUTA:', {
-      method: req.method,
-      url: req.url,
-      user: req.user ? {
-        id: req.user.id,
-        email: req.user.email,
-        type: req.user.type
-      } : 'NO USER'
-    });
-    
-    // Verifica autenticazione
-    if (!req.user) {
-      console.error('❌ CLEAR-ALL - Utente non autenticato');
-      return res.status(401).json({
-        success: false,
-        message: 'Utente non autenticato'
-      });
-    }
-    
-    // Verifica modello
-    if (!Booking) {
-      console.error('❌ CLEAR-ALL - Modello Booking non disponibile');
-      return res.status(500).json({
-        success: false,
-        message: 'Errore interno: modello Booking non disponibile'
-      });
-    }
-    
-    // Prima conta quante prenotazioni ci sono
-    const countBefore = await Booking.count();
-    console.log('🔥 CLEAR-ALL - Prenotazioni da eliminare:', countBefore);
-    
-    // Cancella TUTTE le prenotazioni
-    const deletedCount = await Booking.destroy({
-      where: {}, // Condizione vuota = cancella tutto
-      truncate: false // Non usare TRUNCATE per preservare log
-    });
-    
-    console.log('✅ CLEAR-ALL - Prenotazioni eliminate:', deletedCount);
-    
-    // Verifica che sia tutto vuoto
-    const countAfter = await Booking.count();
-    console.log('✅ CLEAR-ALL - Prenotazioni rimanenti:', countAfter);
-    
-    const response = {
-      success: true,
-      message: `Eliminate ${deletedCount} prenotazioni`,
-      deletedCount,
-      remainingCount: countAfter,
-      timestamp: Date.now()
-    };
-    
-    console.log('✅ CLEAR-ALL - Risposta preparata:', response);
-    res.json(response);
-    
-  } catch (error) {
-    console.error('❌ CLEAR-ALL - Errore completo:', {
-      message: error.message,
-      stack: error.stack,
-      name: error.name,
-      code: error.code
-    });
-    
-    res.status(500).json({
-      success: false,
-      message: 'Errore durante la cancellazione: ' + error.message,
-      errorCode: error.code || 'UNKNOWN',
-      errorName: error.name || 'Unknown'
-    });
-  }
-});
-
 // 🔄 NUOVO: Endpoint per sincronizzazione cross-device (PRIMA delle route con parametri)
-router.get('/sync', async (req, res) => {
+router.get('/sync', syncLimiter, async (req, res) => {
   try {
     console.log('🔄 SYNC ENDPOINT GET - RICHIESTA RICEVUTA:', {
       method: req.method,
@@ -139,118 +61,63 @@ router.get('/sync', async (req, res) => {
       } : 'NO USER'
     });
     
-    // CONTROLLO PRELIMINARE: Verifica che req.user esista
-    if (!req.user) {
-      console.error('❌ SYNC ENDPOINT - req.user è undefined');
-      return res.status(401).json({
-        success: false,
-        message: 'Utente non autenticato'
-      });
-    }
-    
-    console.log('✅ SYNC ENDPOINT - Utente autenticato:', {
+    console.log('🔄 SYNC ENDPOINT - Richiesta sincronizzazione da:', {
       userId: req.user.id,
       userType: req.user.type,
       deviceId: req.headers['x-device-id']
     });
-
-    // CONTROLLO MODELLO: Verifica che Booking sia disponibile
-    if (!Booking) {
-      console.error('❌ SYNC ENDPOINT - Modello Booking non disponibile');
-      return res.status(500).json({
-        success: false,
-        message: 'Errore interno: modello Booking non disponibile'
-      });
-    }
-    
-    console.log('✅ SYNC ENDPOINT - Modello Booking disponibile');
 
     // Recupera tutte le prenotazioni dell'utente o globali per accesso diretto
     let bookings;
     
     if (req.user.type === 'local-access') {
       console.log('🔍 SYNC ENDPOINT - Utente accesso diretto, carico tutte le prenotazioni');
-      try {
-        // QUERY SEMPLIFICATA: Solo tabella bookings, nessun JOIN
-        bookings = await Booking.findAll({
-          attributes: [
-            'id', 'tipo', 'nomeCliente', 'cognomeCliente', 'telefono', 
-            'dataPrenotazione', 'orarioArrivo', 'numeroPersone', 'numeroAdulti',
-            'numeroBambini', 'numeroNeonati', 'nomeEvento', 'numeroPartecipanti',
-            'tipoMenu', 'allergie', 'pacchetto', 'sala', 'stato', 'note',
-            'motivoRifiuto', 'allegati', 'createdAt', 'updatedAt'
-          ],
-          order: [['createdAt', 'DESC']],
-          limit: 1000, // Limite ragionevole
-          raw: true // Evita oggetti Sequelize complessi
-        });
-        console.log('✅ SYNC ENDPOINT - Query findAll SEMPLIFICATA completata per accesso diretto');
-      } catch (dbError) {
-        console.error('❌ SYNC ENDPOINT - Errore query findAll (accesso diretto):', dbError);
-        throw dbError;
-      }
+      // Per accesso diretto, restituisci tutte le prenotazioni
+      bookings = await Booking.findAll({
+        order: [['createdAt', 'DESC']],
+        limit: 1000 // Limite ragionevole
+      });
     } else {
       console.log('🔍 SYNC ENDPOINT - Utente registrato, carico solo sue prenotazioni');
-      try {
-        // QUERY SEMPLIFICATA: Solo tabella bookings, nessun JOIN
-        bookings = await Booking.findAll({
-          attributes: [
-            'id', 'tipo', 'nomeCliente', 'cognomeCliente', 'telefono', 
-            'dataPrenotazione', 'orarioArrivo', 'numeroPersone', 'numeroAdulti',
-            'numeroBambini', 'numeroNeonati', 'nomeEvento', 'numeroPartecipanti',
-            'tipoMenu', 'allergie', 'pacchetto', 'sala', 'stato', 'note',
-            'motivoRifiuto', 'allegati', 'createdAt', 'updatedAt'
-          ],
-          where: { 
-            creatoId: String(req.user.id) // 🔧 Cast a stringa per compatibilità PostgreSQL
-          },
-          order: [['createdAt', 'DESC']],
-          raw: true // Evita oggetti Sequelize complessi
-        });
-        console.log('✅ SYNC ENDPOINT - Query findAll SEMPLIFICATA completata per utente registrato');
-      } catch (dbError) {
-        console.error('❌ SYNC ENDPOINT - Errore query findAll (utente registrato):', dbError);
-        throw dbError;
-      }
+      // Per utenti registrati, solo le loro prenotazioni
+      bookings = await Booking.findAll({
+        where: { creatoId: req.user.id },
+        order: [['createdAt', 'DESC']]
+      });
     }
 
-    console.log('🔄 SYNC ENDPOINT - Prenotazioni trovate:', bookings ? bookings.length : 'NULL');
+    console.log('🔄 SYNC ENDPOINT - Prenotazioni trovate:', bookings.length);
 
     const response = {
       success: true,
-      data: bookings || [],
+      data: bookings,
       timestamp: Date.now(),
       deviceId: req.headers['x-device-id']
     };
     
-    console.log('✅ SYNC ENDPOINT - Risposta preparata:', {
+    console.log('✅ SYNC ENDPOINT - Risposta inviata:', {
       success: response.success,
       dataCount: response.data.length,
       timestamp: response.timestamp
     });
 
     res.json(response);
-    console.log('✅ SYNC ENDPOINT - Risposta inviata con successo');
 
   } catch (error) {
     console.error('❌ SYNC ENDPOINT - Errore completo:', {
       message: error.message,
       stack: error.stack,
-      name: error.name,
-      code: error.code,
       user: req.user ? req.user.id : 'NO USER'
     });
     res.status(500).json({
       success: false,
-      message: 'Errore durante la sincronizzazione: ' + error.message,
-      errorCode: error.code || 'UNKNOWN',
-      errorName: error.name || 'Unknown'
+      message: 'Errore durante la sincronizzazione: ' + error.message
     });
   }
 });
 
 // 🔄 NUOVO: Endpoint per push sincronizzazione
-router.post('/sync', async (req, res) => {
+router.post('/sync', syncLimiter, async (req, res) => {
   try {
     console.log('🔄 SYNC ENDPOINT POST - RICHIESTA RICEVUTA:', {
       method: req.method,
@@ -285,19 +152,9 @@ router.post('/sync', async (req, res) => {
       console.log('🔄 SYNC PUSH - Processando prenotazioni:', bookings.length);
       for (const bookingData of bookings) {
         try {
-          // 🔧 VALIDAZIONE UUID: Salta booking con ID non UUID-compatibili
-          const bookingId = String(bookingData.id);
-          const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(bookingId);
-          
-          if (!isValidUUID) {
-            console.log('⚠️ SYNC PUSH - ID non UUID saltato:', bookingId);
-            results.bookings.errors++;
-            continue; // Salta questo booking
-          }
-          
           // Cerca prenotazione esistente per ID
           const existingBooking = await Booking.findOne({
-            where: { id: bookingId } // Ora è garantito essere UUID valido
+            where: { id: bookingData.id }
           });
 
           if (existingBooking) {
@@ -306,33 +163,23 @@ router.post('/sync', async (req, res) => {
             const newTimestamp = new Date(bookingData._timestamp || bookingData.createdAt).getTime();
             
             if (newTimestamp > existingTimestamp) {
-              // 🔧 Normalizza tutti gli ID prima dell'update
-              const normalizedUpdateData = {
-                ...bookingData,
-                id: String(bookingData.id),
-                creatoId: bookingData.creatoId ? String(bookingData.creatoId) : existingBooking.creatoId,
-                processatoDa: bookingData.processatoDa ? String(bookingData.processatoDa) : existingBooking.processatoDa
-              };
-              
-              await existingBooking.update(normalizedUpdateData);
+              await existingBooking.update(bookingData);
               results.bookings.updated++;
               console.log('📝 SYNC PUSH - Prenotazione aggiornata:', bookingData.id);
             }
           } else {
-            // 🔧 Crea nuova prenotazione con UUID valido
-            const validId = isValidUUID ? bookingId : uuidv4(); // Genera nuovo UUID se necessario
-            
-            const normalizedBookingData = {
+            // Crea nuova prenotazione
+            const newBooking = await Booking.create({
               ...bookingData,
-              id: validId, // 🔧 UUID garantito valido
-              creatoId: String(req.user.id), // 🔧 Cast String per compatibilità PostgreSQL
-              stato: bookingData.stato || 'confermata'
-            };
-            
-            console.log('➕ SYNC PUSH - Creando prenotazione con UUID:', validId);
-            await Booking.create(normalizedBookingData);
+              creatoId: req.user.type === 'local-access' ? null : req.user.id,
+              stato: bookingData.stato || 'CONFERMATA'
+            });
             results.bookings.created++;
-            console.log('➕ SYNC PUSH - Nuova prenotazione creata:', validId);
+            console.log('➕ SYNC PUSH - Nuova prenotazione creata:', {
+              id: newBooking.id,
+              nomeCliente: newBooking.nomeCliente,
+              dataPrenotazione: newBooking.dataPrenotazione
+            });
           }
         } catch (bookingError) {
           console.error('❌ SYNC PUSH - Errore prenotazione:', bookingError);
@@ -370,7 +217,7 @@ router.get('/calendar', calendarQueryValidator, getCalendarBookings);
 
 // Routes CRUD prenotazioni
 router.route('/')
-  .get(getBookings) // RIMUOVO COMPLETAMENTE RATE LIMITING dalla GET principale
+  .get(getBookings)
   .post(
     authorizePermission('creaPrenotazioni'), 
     uploadMultiple, 
