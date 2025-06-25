@@ -1,9 +1,11 @@
 const express = require('express');
 const router = express.Router();
+const { validationResult } = require('express-validator');
 const { Sequelize } = require('sequelize');
+const { v4: uuidv4 } = require('uuid');
 
 // Import models
-const { Booking } = require('../models');
+const { Booking, User } = require('../models');
 
 // Import controllers
 const {
@@ -283,9 +285,19 @@ router.post('/sync', async (req, res) => {
       console.log('🔄 SYNC PUSH - Processando prenotazioni:', bookings.length);
       for (const bookingData of bookings) {
         try {
+          // 🔧 VALIDAZIONE UUID: Salta booking con ID non UUID-compatibili
+          const bookingId = String(bookingData.id);
+          const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(bookingId);
+          
+          if (!isValidUUID) {
+            console.log('⚠️ SYNC PUSH - ID non UUID saltato:', bookingId);
+            results.bookings.errors++;
+            continue; // Salta questo booking
+          }
+          
           // Cerca prenotazione esistente per ID
           const existingBooking = await Booking.findOne({
-            where: { id: String(bookingData.id) } // 🔧 Cast String per compatibilità PostgreSQL
+            where: { id: bookingId } // Ora è garantito essere UUID valido
           });
 
           if (existingBooking) {
@@ -307,17 +319,20 @@ router.post('/sync', async (req, res) => {
               console.log('📝 SYNC PUSH - Prenotazione aggiornata:', bookingData.id);
             }
           } else {
-            // Crea nuova prenotazione - 🔧 Normalizza tutti gli ID
+            // 🔧 Crea nuova prenotazione con UUID valido
+            const validId = isValidUUID ? bookingId : uuidv4(); // Genera nuovo UUID se necessario
+            
             const normalizedBookingData = {
               ...bookingData,
-              id: String(bookingData.id), // 🔧 Cast String per ID
+              id: validId, // 🔧 UUID garantito valido
               creatoId: String(req.user.id), // 🔧 Cast String per compatibilità PostgreSQL
               stato: bookingData.stato || 'confermata'
             };
             
+            console.log('➕ SYNC PUSH - Creando prenotazione con UUID:', validId);
             await Booking.create(normalizedBookingData);
             results.bookings.created++;
-            console.log('➕ SYNC PUSH - Nuova prenotazione creata:', bookingData.id);
+            console.log('➕ SYNC PUSH - Nuova prenotazione creata:', validId);
           }
         } catch (bookingError) {
           console.error('❌ SYNC PUSH - Errore prenotazione:', bookingError);
