@@ -115,7 +115,7 @@ const markAsRead = async (req, res) => {
   try {
     const notification = await Notification.findOne({
       where: { 
-        id: req.params.id, 
+        id: String(req.params.id), 
         userId: req.user.id 
       }
     });
@@ -190,7 +190,7 @@ const deleteNotification = async (req, res) => {
   try {
     const notification = await Notification.findOne({
       where: { 
-        id: req.params.id, 
+        id: String(req.params.id), 
         userId: req.user.id 
       }
     });

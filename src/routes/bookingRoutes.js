@@ -285,7 +285,7 @@ router.post('/sync', async (req, res) => {
         try {
           // Cerca prenotazione esistente per ID
           const existingBooking = await Booking.findOne({
-            where: { id: bookingData.id }
+            where: { id: String(bookingData.id) } // 🔧 Cast String per compatibilità PostgreSQL
           });
 
           if (existingBooking) {
@@ -294,17 +294,28 @@ router.post('/sync', async (req, res) => {
             const newTimestamp = new Date(bookingData._timestamp || bookingData.createdAt).getTime();
             
             if (newTimestamp > existingTimestamp) {
-              await existingBooking.update(bookingData);
+              // 🔧 Normalizza tutti gli ID prima dell'update
+              const normalizedUpdateData = {
+                ...bookingData,
+                id: String(bookingData.id),
+                creatoId: bookingData.creatoId ? String(bookingData.creatoId) : existingBooking.creatoId,
+                processatoDa: bookingData.processatoDa ? String(bookingData.processatoDa) : existingBooking.processatoDa
+              };
+              
+              await existingBooking.update(normalizedUpdateData);
               results.bookings.updated++;
               console.log('📝 SYNC PUSH - Prenotazione aggiornata:', bookingData.id);
             }
           } else {
-            // Crea nuova prenotazione
-            await Booking.create({
+            // Crea nuova prenotazione - 🔧 Normalizza tutti gli ID
+            const normalizedBookingData = {
               ...bookingData,
-              creatoId: String(req.user.id), // 🔧 Cast a stringa per compatibilità PostgreSQL
+              id: String(bookingData.id), // 🔧 Cast String per ID
+              creatoId: String(req.user.id), // 🔧 Cast String per compatibilità PostgreSQL
               stato: bookingData.stato || 'confermata'
-            });
+            };
+            
+            await Booking.create(normalizedBookingData);
             results.bookings.created++;
             console.log('➕ SYNC PUSH - Nuova prenotazione creata:', bookingData.id);
           }

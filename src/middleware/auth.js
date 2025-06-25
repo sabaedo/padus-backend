@@ -241,7 +241,7 @@ const authorizePermission = (permessoRichiesto) => {
 // Middleware per verificare se l'utente può modificare una prenotazione
 const canModifyBooking = async (req, res, next) => {
   try {
-    const bookingId = req.params.id || req.body.bookingId;
+    const bookingId = String(req.params.id || req.body.bookingId);
     
     if (!bookingId) {
       return res.status(400).json({

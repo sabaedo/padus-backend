@@ -58,7 +58,7 @@ const getStaffUsers = async (req, res) => {
 const updateUserPermissions = async (req, res) => {
   try {
     const { permessi } = req.body;
-    const userId = req.params.id;
+    const userId = String(req.params.id);
 
     if (!['BASE', 'AUTORIZZATO', 'ADMIN_SECONDARIO'].includes(permessi)) {
       return res.status(400).json({
@@ -120,7 +120,7 @@ const updateUserPermissions = async (req, res) => {
 const updateUserStatus = async (req, res) => {
   try {
     const { attivo } = req.body;
-    const userId = req.params.id;
+    const userId = String(req.params.id);
 
     if (typeof attivo !== 'boolean') {
       return res.status(400).json({
@@ -181,7 +181,7 @@ const updateUserStatus = async (req, res) => {
 // @access  Private (Admin)
 const getUserDetails = async (req, res) => {
   try {
-    const user = await User.findByPk(req.params.id, {
+    const user = await User.findByPk(String(req.params.id), {
       attributes: { exclude: ['password'] }
     });
 

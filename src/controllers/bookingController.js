@@ -337,7 +337,7 @@ const getCalendarBookings = async (req, res) => {
 // @access  Private
 const getBooking = async (req, res) => {
   try {
-    const booking = await Booking.findByPk(req.params.id, {
+    const booking = await Booking.findByPk(String(req.params.id), {
       include: [
         { model: User, as: 'creatore', attributes: ['id', 'nome', 'cognome', 'email'] },
         { model: User, as: 'processatore', attributes: ['id', 'nome', 'cognome', 'email'] }
@@ -430,7 +430,7 @@ const updateBooking = async (req, res) => {
 const updateBookingStatus = async (req, res) => {
   try {
     const { stato, motivoRifiuto } = req.body;
-    const bookingId = req.params.id;
+    const bookingId = String(req.params.id); // 🔧 Cast String per compatibilità PostgreSQL
 
     if (!['CONFERMATA', 'RIFIUTATA'].includes(stato)) {
       return res.status(400).json({
