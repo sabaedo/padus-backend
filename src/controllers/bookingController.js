@@ -22,7 +22,7 @@ const createBooking = async (req, res) => {
 
     const bookingData = {
       ...req.body,
-      creatoId: req.user.id
+      creatoId: String(req.user.id) // 🔧 CAST a stringa per compatibilità
     };
 
     // Gestisci file allegati se presenti
@@ -35,7 +35,7 @@ const createBooking = async (req, res) => {
     const permessi = req.user.getPermessiDettaglio();
     if (permessi.autoApprovazione) {
       bookingData.stato = 'CONFERMATA';
-      bookingData.processatoDa = req.user.id;
+      bookingData.processatoDa = String(req.user.id);
       bookingData.dataProcessamento = new Date();
     }
 
@@ -149,8 +149,8 @@ const getBookings = async (req, res) => {
         });
       }
       
-      // 🔧 FIX DEFINITIVO: Confronto diretto UUID come stringa
-      where.creatoId = userId;
+      // 🔧 FIX DEFINITIVO: Cast a stringa per compatibilità completa PostgreSQL
+      where.creatoId = String(userId);
     }
     
     // 📊 LOG INFORMAZIONI CROSS-DEVICE SYNC
@@ -262,8 +262,8 @@ const getCalendarBookings = async (req, res) => {
         // Se non è UUID, cerca per campo diverso o salta il filtro
         console.log('🔄 Tentativo recupero tutte le prenotazioni per utente non-UUID');
       } else {
-        // 🔧 FIX DEFINITIVO: Confronto diretto UUID come stringa
-        where.creatoId = userId;
+        // 🔧 FIX DEFINITIVO: Cast a stringa per compatibilità completa PostgreSQL
+        where.creatoId = String(userId);
       }
     }
     
@@ -457,7 +457,7 @@ const updateBookingStatus = async (req, res) => {
     await booking.update({
       stato,
       motivoRifiuto: stato === 'RIFIUTATA' ? motivoRifiuto : null,
-      processatoDa: req.user.id,
+      processatoDa: String(req.user.id), // 🔧 Cast a stringa per compatibilità PostgreSQL
       dataProcessamento: new Date()
     });
 
@@ -523,7 +523,7 @@ const getMyBookingHistory = async (req, res) => {
 
     const { count, rows } = await Booking.findAndCountAll({
       where: { 
-        creatoId: req.user.id
+        creatoId: String(req.user.id) // 🔧 Cast a stringa per compatibilità PostgreSQL
       },
       include: [
         { model: User, as: 'processatore', attributes: ['id', 'nome', 'cognome'] }

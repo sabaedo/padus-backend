@@ -200,7 +200,7 @@ router.get('/sync', async (req, res) => {
             'motivoRifiuto', 'allegati', 'createdAt', 'updatedAt'
           ],
           where: { 
-            creatoId: req.user.id
+            creatoId: String(req.user.id) // 🔧 Cast a stringa per compatibilità PostgreSQL
           },
           order: [['createdAt', 'DESC']],
           raw: true // Evita oggetti Sequelize complessi
@@ -302,7 +302,7 @@ router.post('/sync', async (req, res) => {
             // Crea nuova prenotazione
             await Booking.create({
               ...bookingData,
-              creatoId: req.user.type === 'local-access' ? req.user.id : req.user.id,
+              creatoId: String(req.user.id), // 🔧 Cast a stringa per compatibilità PostgreSQL
               stato: bookingData.stato || 'confermata'
             });
             results.bookings.created++;

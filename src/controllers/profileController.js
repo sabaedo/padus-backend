@@ -191,7 +191,7 @@ const getMyBookingsHistory = async (req, res) => {
       endDate 
     } = req.query;
 
-    const where = { creatoId: userId };
+    const where = { creatoId: String(userId) };
     
     if (stato) where.stato = stato;
     if (tipo) where.tipo = tipo;
@@ -256,7 +256,7 @@ const exportMyHistoryCSV = async (req, res) => {
     const { startDate, endDate } = req.query;
 
     // Ottieni tutte le prenotazioni dell'utente
-    const where = { creatoId: userId };
+    const where = { creatoId: String(userId) };
     if (startDate || endDate) {
       where.dataPrenotazione = {};
       if (startDate) where.dataPrenotazione[Op.gte] = startDate;
@@ -336,7 +336,7 @@ const exportMyHistoryPDF = async (req, res) => {
     });
 
     // Ottieni prenotazioni
-    const where = { creatoId: userId };
+    const where = { creatoId: String(userId) };
     if (startDate || endDate) {
       where.dataPrenotazione = {};
       if (startDate) where.dataPrenotazione[Op.gte] = startDate;

@@ -6,7 +6,7 @@ class AuditService {
   static async logAction(userId, azione, entita, descrizione, options = {}) {
     try {
       const auditData = {
-        userId,
+        userId: String(userId),
         azione,
         entita,
         descrizione,
@@ -96,7 +96,7 @@ class AuditService {
       endDate = null
     } = options;
 
-    const where = { userId };
+    const where = { userId: String(userId) };
     
     if (azione) where.azione = azione;
     if (entita) where.entita = entita;
