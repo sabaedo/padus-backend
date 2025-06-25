@@ -134,11 +134,12 @@ const getBookings = async (req, res) => {
     // 🔧 CORREZIONE: Controllo robusto per l'ID utente
     const permessi = req.user.getPermessiDettaglio();
     
-    // 🆕 CROSS-DEVICE SYNC: Se è calendario, mostra tutte le prenotazioni anche per staff base
+    // 🆕 CROSS-DEVICE SYNC: Se è una richiesta sync/calendar, mostra tutte le prenotazioni anche per staff base
+    const isSync = req.path.includes('/sync') || req.query.sync === 'true';
     const isCalendar = req.path.includes('/calendar') || req.query.calendar === 'true';
-    
-    if (!permessi.gestioneAltrui && !isCalendar) {
-      // Verifica che l'ID sia un UUID valido
+
+    if (!permessi.gestioneAltrui && !isSync && !isCalendar) {
+      // Applica filtro solo per richieste normali, non per sync/calendar
       const userId = req.user.id;
       if (!userId) {
         console.error('❌ USER ID NON DEFINITO:', req.user);
@@ -148,23 +149,16 @@ const getBookings = async (req, res) => {
         });
       }
       
-      // Verifica formato UUID (molto permissivo)
-      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-      if (!uuidRegex.test(userId)) {
-        console.error('❌ USER ID NON È UUID VALIDO:', userId, typeof userId);
-        // Se non è UUID, cerca per campo diverso o salta il filtro
-        console.log('🔄 Tentativo recupero tutte le prenotazioni per utente non-UUID');
-      } else {
-        // 🔧 CAST ESPLICITO per PostgreSQL: Converte string UUID a tipo UUID
-        where.creatoId = Sequelize.cast(userId, 'UUID');
-      }
+      // 🔧 CAST ESPLICITO per PostgreSQL: Converte sempre a UUID
+      where.creatoId = Sequelize.cast(userId, 'UUID');
     }
     
-    // 📊 LOG INFORMAZIONI CALENDARIO
-    console.log('📅 CALENDAR SYNC INFO:', {
+    // 📊 LOG INFORMAZIONI CROSS-DEVICE SYNC
+    console.log('🔄 CROSS-DEVICE SYNC INFO:', {
+      isSync,
       isCalendar,
       gestioneAltrui: permessi.gestioneAltrui,
-      willFilterByUser: !permessi.gestioneAltrui && !isCalendar,
+      willFilterByUser: !permessi.gestioneAltrui && !isSync && !isCalendar,
       path: req.path
     });
 
@@ -525,7 +519,7 @@ const getMyBookingHistory = async (req, res) => {
     const offset = (page - 1) * limit;
 
     const { count, rows } = await Booking.findAndCountAll({
-      where: { creatoId: req.user.id },
+      where: { creatoId: Sequelize.cast(req.user.id, 'UUID') },
       include: [
         { model: User, as: 'processatore', attributes: ['id', 'nome', 'cognome'] }
       ],
