@@ -200,9 +200,7 @@ router.get('/sync', async (req, res) => {
             'motivoRifiuto', 'allegati', 'createdAt', 'updatedAt'
           ],
           where: { 
-            creatoId: {
-              [Op.eq]: Sequelize.cast(req.user.id, 'UUID')
-            }
+            creatoId: req.user.id
           },
           order: [['createdAt', 'DESC']],
           raw: true // Evita oggetti Sequelize complessi

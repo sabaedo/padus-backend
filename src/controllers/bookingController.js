@@ -149,10 +149,8 @@ const getBookings = async (req, res) => {
         });
       }
       
-      // 🔧 CORREZIONE DEFINITIVA: Confronto UUID corretto per PostgreSQL
-      where.creatoId = {
-        [Op.eq]: Sequelize.cast(userId, 'UUID')
-      };
+      // 🔧 FIX DEFINITIVO: Confronto diretto UUID come stringa
+      where.creatoId = userId;
     }
     
     // 📊 LOG INFORMAZIONI CROSS-DEVICE SYNC
@@ -264,10 +262,8 @@ const getCalendarBookings = async (req, res) => {
         // Se non è UUID, cerca per campo diverso o salta il filtro
         console.log('🔄 Tentativo recupero tutte le prenotazioni per utente non-UUID');
       } else {
-        // 🔧 CORREZIONE DEFINITIVA: Confronto UUID corretto per PostgreSQL
-        where.creatoId = {
-          [Op.eq]: Sequelize.cast(userId, 'UUID')
-        };
+        // 🔧 FIX DEFINITIVO: Confronto diretto UUID come stringa
+        where.creatoId = userId;
       }
     }
     
@@ -527,9 +523,7 @@ const getMyBookingHistory = async (req, res) => {
 
     const { count, rows } = await Booking.findAndCountAll({
       where: { 
-        creatoId: {
-          [Op.eq]: Sequelize.cast(req.user.id, 'UUID')
-        }
+        creatoId: req.user.id
       },
       include: [
         { model: User, as: 'processatore', attributes: ['id', 'nome', 'cognome'] }
