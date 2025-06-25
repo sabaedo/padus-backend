@@ -225,9 +225,20 @@ Booking.prototype.isModificabile = function() {
 };
 
 Booking.prototype.getDettagliPrenotazione = function() {
+  // Restituire TUTTI i campi raw del database per evitare dati corrotti
   const base = {
     id: this.id,
     tipo: this.tipo,
+    // Campi originali del database
+    nomeCliente: this.nomeCliente,
+    cognomeCliente: this.cognomeCliente,
+    dataPrenotazione: this.dataPrenotazione,
+    numeroAdulti: this.numeroAdulti,
+    numeroRagazzi: this.numeroRagazzi,
+    numeroBambini: this.numeroBambini,
+    numeroNeonati: this.numeroNeonati,
+    numeroPersone: this.numeroPersone,
+    // Alias per compatibilità
     cliente: this.getNomeCompletoCliente(),
     telefono: this.telefono,
     data: this.dataPrenotazione,
@@ -235,18 +246,27 @@ Booking.prototype.getDettagliPrenotazione = function() {
     stato: this.stato,
     persone: this.getNumeroTotalePersone(),
     note: this.note,
-    allegati: this.allegati
+    allegati: this.allegati,
+    sala: this.sala,
+    creatoIl: this.creatoIl,
+    modificatoIl: this.modificatoIl
   };
   
   if (this.tipo === 'EVENTO') {
     return {
       ...base,
-      sala: this.sala,
+      nomeEvento: this.nomeEvento,
+      numeroPartecipanti: this.numeroPartecipanti,
+      tipoMenu: this.tipoMenu,
+      allergie: this.allergie,
+      pacchetto: this.pacchetto,
+      // Compatibilità con vecchia struttura
       evento: {
         nome: this.nomeEvento,
         partecipanti: this.numeroPartecipanti,
         bambini: this.numeroBambini,
         neonati: this.numeroNeonati,
+        ragazzi: this.numeroRagazzi,
         tipoMenu: this.tipoMenu,
         allergie: this.allergie,
         pacchetto: this.pacchetto
@@ -256,9 +276,11 @@ Booking.prototype.getDettagliPrenotazione = function() {
   
   return {
     ...base,
-    sala: this.sala,
+    tipoMenu: this.tipoMenu,
+    // Compatibilità con vecchia struttura
     normale: {
       adulti: this.numeroAdulti,
+      ragazzi: this.numeroRagazzi,
       bambini: this.numeroBambini,
       neonati: this.numeroNeonati,
       tipoMenu: this.tipoMenu,

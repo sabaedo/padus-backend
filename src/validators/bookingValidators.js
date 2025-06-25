@@ -47,6 +47,11 @@ const createBookingValidator = [
     .isInt({ min: 0, max: 200 })
     .withMessage('Numero adulti deve essere tra 0 e 200'),
     
+  body('numeroRagazzi')
+    .if(body('tipo').equals('NORMALE'))
+    .isInt({ min: 0, max: 100 })
+    .withMessage('Numero ragazzi deve essere tra 0 e 100'),
+    
   body('numeroNeonati')
     .if(body('tipo').equals('NORMALE'))
     .isInt({ min: 0, max: 100 })
@@ -136,6 +141,11 @@ const updateBookingValidator = [
     .matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/)
     .withMessage('Formato orario non valido (HH:MM)'),
     
+  body('numeroRagazzi')
+    .optional()
+    .isInt({ min: 0, max: 100 })
+    .withMessage('Numero ragazzi deve essere tra 0 e 100'),
+
   body('numeroNeonati')
     .optional()
     .isInt({ min: 0, max: 100 })
