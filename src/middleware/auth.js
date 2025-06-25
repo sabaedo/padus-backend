@@ -269,7 +269,10 @@ const canModifyBooking = async (req, res, next) => {
     }
     
     // Staff può modificare solo le proprie prenotazioni in stato IN_ATTESA
-    if (booking.creatoId === req.user.id && booking.stato === 'IN_ATTESA') {
+    // 🔧 CAST ESPLICITO per PostgreSQL: Converte a stringa per confronto sicuro
+    const userIdStr = String(req.user.id);
+    const bookingCreatorIdStr = String(booking.creatoId);
+    if (bookingCreatorIdStr === userIdStr && booking.stato === 'IN_ATTESA') {
       req.booking = booking;
       return next();
     }

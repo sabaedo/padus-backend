@@ -35,7 +35,7 @@ const createBooking = async (req, res) => {
     const permessi = req.user.getPermessiDettaglio();
     if (permessi.autoApprovazione) {
       bookingData.stato = 'CONFERMATA';
-      bookingData.processatoDa = req.user.id;
+      bookingData.processatoDa = Sequelize.cast(req.user.id, 'UUID');
       bookingData.dataProcessamento = new Date();
     }
 
@@ -353,7 +353,10 @@ const getBooking = async (req, res) => {
 
     // Controlla permessi
     const permessi = req.user.getPermessiDettaglio();
-    if (!permessi.gestioneAltrui && booking.creatoId !== req.user.id) {
+    // 🔧 CAST ESPLICITO per PostgreSQL: Converte a stringa per confronto sicuro
+    const userIdStr = String(req.user.id);
+    const bookingCreatorIdStr = String(booking.creatoId);
+    if (!permessi.gestioneAltrui && bookingCreatorIdStr !== userIdStr) {
       return res.status(403).json({
         success: false,
         message: 'Non puoi visualizzare questa prenotazione'
@@ -454,7 +457,7 @@ const updateBookingStatus = async (req, res) => {
     await booking.update({
       stato,
       motivoRifiuto: stato === 'RIFIUTATA' ? motivoRifiuto : null,
-      processatoDa: req.user.id,
+      processatoDa: Sequelize.cast(req.user.id, 'UUID'),
       dataProcessamento: new Date()
     });
 
