@@ -251,7 +251,7 @@ const canModifyBooking = async (req, res, next) => {
     }
     
     const { Booking } = require('../models');
-    const booking = await Booking.findByPk(bookingId);
+    const booking = await Booking.findByPk(String(bookingId));
     
     if (!booking) {
       return res.status(404).json({

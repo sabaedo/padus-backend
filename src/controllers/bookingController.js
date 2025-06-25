@@ -57,7 +57,7 @@ const createBooking = async (req, res) => {
     );
     
     // Includi i dati del creatore nella risposta
-    const bookingWithUser = await Booking.findByPk(booking.id, {
+    const bookingWithUser = await Booking.findByPk(String(booking.id), {
       include: [
         { model: User, as: 'creatore', attributes: ['id', 'nome', 'cognome', 'email'] },
         { model: User, as: 'processatore', attributes: ['id', 'nome', 'cognome', 'email'] }
@@ -439,7 +439,7 @@ const updateBookingStatus = async (req, res) => {
       });
     }
 
-    const booking = await Booking.findByPk(bookingId, {
+    const booking = await Booking.findByPk(String(bookingId), {
       include: [
         { model: User, as: 'creatore', attributes: ['id', 'nome', 'cognome', 'email'] }
       ]
