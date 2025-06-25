@@ -67,6 +67,14 @@ const Booking = sequelize.define('Booking', {
       max: 200
     }
   },
+  numeroRagazzi: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    validate: {
+      min: 0,
+      max: 100
+    }
+  },
   numeroBambini: {
     type: DataTypes.INTEGER,
     allowNull: true,
@@ -209,7 +217,7 @@ Booking.prototype.getNumeroTotalePersone = function() {
   if (this.tipo === 'EVENTO') {
     return this.numeroPartecipanti;
   }
-  return (this.numeroPersone || (this.numeroAdulti || 0) + (this.numeroBambini || 0) + (this.numeroNeonati || 0));
+  return (this.numeroPersone || (this.numeroAdulti || 0) + (this.numeroRagazzi || 0) + (this.numeroBambini || 0) + (this.numeroNeonati || 0));
 };
 
 Booking.prototype.isModificabile = function() {
