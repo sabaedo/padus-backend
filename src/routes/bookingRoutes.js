@@ -199,7 +199,11 @@ router.get('/sync', async (req, res) => {
             'tipoMenu', 'allergie', 'pacchetto', 'sala', 'stato', 'note',
             'motivoRifiuto', 'allegati', 'createdAt', 'updatedAt'
           ],
-          where: { creatoId: Sequelize.cast(req.user.id, 'UUID') },
+          where: { 
+            creatoId: {
+              [Op.eq]: Sequelize.cast(req.user.id, 'UUID')
+            }
+          },
           order: [['createdAt', 'DESC']],
           raw: true // Evita oggetti Sequelize complessi
         });

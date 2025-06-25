@@ -35,7 +35,7 @@ const createBooking = async (req, res) => {
     const permessi = req.user.getPermessiDettaglio();
     if (permessi.autoApprovazione) {
       bookingData.stato = 'CONFERMATA';
-      bookingData.processatoDa = Sequelize.cast(req.user.id, 'UUID');
+      bookingData.processatoDa = req.user.id;
       bookingData.dataProcessamento = new Date();
     }
 
@@ -149,8 +149,10 @@ const getBookings = async (req, res) => {
         });
       }
       
-      // 🔧 CAST ESPLICITO per PostgreSQL: Converte sempre a UUID
-      where.creatoId = Sequelize.cast(userId, 'UUID');
+      // 🔧 CORREZIONE DEFINITIVA: Confronto UUID corretto per PostgreSQL
+      where.creatoId = {
+        [Op.eq]: Sequelize.cast(userId, 'UUID')
+      };
     }
     
     // 📊 LOG INFORMAZIONI CROSS-DEVICE SYNC
@@ -262,8 +264,10 @@ const getCalendarBookings = async (req, res) => {
         // Se non è UUID, cerca per campo diverso o salta il filtro
         console.log('🔄 Tentativo recupero tutte le prenotazioni per utente non-UUID');
       } else {
-        // 🔧 CAST ESPLICITO per PostgreSQL: Converte string UUID a tipo UUID
-        where.creatoId = Sequelize.cast(userId, 'UUID');
+        // 🔧 CORREZIONE DEFINITIVA: Confronto UUID corretto per PostgreSQL
+        where.creatoId = {
+          [Op.eq]: Sequelize.cast(userId, 'UUID')
+        };
       }
     }
     
@@ -457,7 +461,7 @@ const updateBookingStatus = async (req, res) => {
     await booking.update({
       stato,
       motivoRifiuto: stato === 'RIFIUTATA' ? motivoRifiuto : null,
-      processatoDa: Sequelize.cast(req.user.id, 'UUID'),
+      processatoDa: req.user.id,
       dataProcessamento: new Date()
     });
 
@@ -522,7 +526,11 @@ const getMyBookingHistory = async (req, res) => {
     const offset = (page - 1) * limit;
 
     const { count, rows } = await Booking.findAndCountAll({
-      where: { creatoId: Sequelize.cast(req.user.id, 'UUID') },
+      where: { 
+        creatoId: {
+          [Op.eq]: Sequelize.cast(req.user.id, 'UUID')
+        }
+      },
       include: [
         { model: User, as: 'processatore', attributes: ['id', 'nome', 'cognome'] }
       ],
