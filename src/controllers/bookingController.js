@@ -282,7 +282,7 @@ const getCalendarBookings = async (req, res) => {
       attributes: [
         'id', 'tipo', 'nomeCliente', 'cognomeCliente', 'telefono', 
         'dataPrenotazione', 'orarioArrivo', 'numeroPersone', 'numeroAdulti',
-        'numeroBambini', 'numeroNeonati', 'nomeEvento', 'numeroPartecipanti',
+        'numeroRagazzi', 'numeroBambini', 'numeroNeonati', 'nomeEvento', 'numeroPartecipanti',
         'tipoMenu', 'allergie', 'pacchetto', 'sala', 'stato', 'note',
         'motivoRifiuto', 'allegati', 'createdAt', 'updatedAt', 'creatoId'
       ],
@@ -300,7 +300,7 @@ const getCalendarBookings = async (req, res) => {
       if (booking.tipo === 'EVENTO') {
         numPersone = booking.numeroPartecipanti || 0;
       } else {
-        numPersone = (booking.numeroPersone || 0) + (booking.numeroAdulti || 0) + (booking.numeroBambini || 0) + (booking.numeroNeonati || 0);
+        numPersone = (booking.numeroPersone || 0) + (booking.numeroAdulti || 0) + (booking.numeroRagazzi || 0) + (booking.numeroBambini || 0) + (booking.numeroNeonati || 0);
       }
       
       return {
