@@ -172,7 +172,7 @@ const getBookings = async (req, res) => {
       attributes: [
         'id', 'tipo', 'nomeCliente', 'cognomeCliente', 'telefono', 
         'dataPrenotazione', 'orarioArrivo', 'numeroPersone', 'numeroAdulti',
-        'numeroBambini', 'numeroNeonati', 'nomeEvento', 'numeroPartecipanti',
+        'numeroRagazzi', 'numeroBambini', 'numeroNeonati', 'nomeEvento', 'numeroPartecipanti',
         'tipoMenu', 'allergie', 'pacchetto', 'sala', 'stato', 'note',
         'motivoRifiuto', 'allegati', 'createdAt', 'updatedAt', 'creatoId', 'processatoDa'
       ],
