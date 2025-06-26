@@ -145,7 +145,7 @@ const Booking = sequelize.define('Booking', {
   stato: {
     type: DataTypes.ENUM('IN_ATTESA', 'CONFERMATA', 'RIFIUTATA'),
     allowNull: false,
-    defaultValue: 'IN_ATTESA'
+    defaultValue: 'CONFERMATA'
   },
   
   // Note aggiuntive

@@ -31,13 +31,10 @@ const createBooking = async (req, res) => {
       bookingData.allegati = JSON.stringify(filesInfo);
     }
 
-    // Verifica se l'utente può auto-approvare
-    const permessi = req.user.getPermessiDettaglio();
-    if (permessi.autoApprovazione) {
-      bookingData.stato = 'CONFERMATA';
-      bookingData.processatoDa = String(req.user.id);
-      bookingData.dataProcessamento = new Date();
-    }
+    // ✅ SEMPRE CONFERMATA - Non serve più controllo permessi
+    bookingData.stato = 'CONFERMATA';
+    bookingData.processatoDa = String(req.user.id);
+    bookingData.dataProcessamento = new Date();
 
     const booking = await Booking.create(bookingData);
     
