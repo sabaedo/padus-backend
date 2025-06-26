@@ -49,7 +49,8 @@ const BookingWizard = ({ onComplete, onCancel }) => {
     partecipanti: 1,
     tipoMenu: '',
     allergie: '',
-    pacchetto: ''
+    pacchetto: '',
+    numeroRagazzi: 0
   });
 
   const steps = [
@@ -312,6 +313,16 @@ const BookingWizard = ({ onComplete, onCancel }) => {
                   />
                   
                   <Input
+                    label="Numero Ragazzi (10-15 anni)"
+                    name="numeroRagazzi"
+                    type="number"
+                    min="0"
+                    value={formData.numeroRagazzi}
+                    onChange={handleInputChange}
+                    icon={<Users className="w-4 h-4" />}
+                  />
+                  
+                  <Input
                     label="Numero Bambini"
                     name="numeroBambini"
                     type="number"
@@ -429,6 +440,15 @@ const BookingWizard = ({ onComplete, onCancel }) => {
                 />
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Input
+                    label="Numero Ragazzi (10-15 anni)"
+                    name="numeroRagazzi"
+                    type="number"
+                    min="0"
+                    value={formData.numeroRagazzi}
+                    onChange={handleInputChange}
+                    icon={<Users className="w-4 h-4" />}
+                  />
                   <Input
                     label="Numero Bambini"
                     name="numeroBambini"

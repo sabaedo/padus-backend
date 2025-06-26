@@ -304,17 +304,17 @@ const getCalendarBookings = async (req, res) => {
       }
       
       return {
-        id: booking.id,
+      id: booking.id,
         title: `${nomeCompleto} (${numPersone}p)`,
-        start: `${booking.dataPrenotazione}T${booking.orarioArrivo}`,
-        type: booking.tipo,
-        status: booking.stato,
+      start: `${booking.dataPrenotazione}T${booking.orarioArrivo}`,
+      type: booking.tipo,
+      status: booking.stato,
         cliente: nomeCompleto,
-        telefono: booking.telefono,
+      telefono: booking.telefono,
         persone: numPersone,
-        note: booking.note,
+      note: booking.note,
         createdBy: 'Admin', // Placeholder poiché no JOIN
-        sala: booking.sala
+      sala: booking.sala
       };
     });
 
