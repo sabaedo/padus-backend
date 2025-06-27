@@ -262,21 +262,75 @@ async function startServer() {
       console.log(`   Bookings: ${bookingCount}`);  
       console.log(`   Notifications: ${notificationCount}`);
       
-      // Se non ci sono utenti, crea l'admin di default
-      if (userCount === 0) {
-        console.log('🔧 RAILWAY - Creazione utente admin di default...');
-        
-        const adminUser = await User.create({
-          nome: 'Admin',
-          cognome: 'Sistema',
-          email: 'admin@padus.com',
-          password: 'Admin123!',
-          ruolo: 'ADMIN',
-          livelloPermessi: 'AMMINISTRATORE',
+      // 🔑 CREAZIONE ACCOUNT CONDIVISI per CROSS-DEVICE
+      console.log('🔑 RAILWAY - Controllo account condivisi per cross-device...');
+      
+      // Account condivisi da creare/aggiornare
+      const sharedAccounts = [
+        {
+          nome: 'Staff',
+          cognome: 'Padus',
+          email: 'staff@padus.com',
+          password: 'staff123',
+          ruolo: 'STAFF',
+          permessi: 'BASE',
           attivo: true
-        });
-        
-        console.log('✅ RAILWAY - Utente admin creato:', adminUser.email);
+        },
+        {
+          nome: 'Admin',
+          cognome: 'Padus',
+          email: 'admin@padus.com',
+          password: 'admin123',
+          ruolo: 'ADMIN',
+          permessi: 'AMMINISTRATORE',
+          attivo: true
+        }
+      ];
+      
+      for (const accountData of sharedAccounts) {
+        try {
+          // Controlla se l'account esiste già
+          const existingUser = await User.findOne({ 
+            where: { email: accountData.email } 
+          });
+          
+          if (existingUser) {
+            console.log(`🔄 RAILWAY - Account ${accountData.email} già esistente - aggiorno`);
+            
+            // Aggiorna per assicurarsi che sia attivo e con password corretta
+            await existingUser.update({
+              password: accountData.password,
+              attivo: true,
+              nome: accountData.nome,
+              cognome: accountData.cognome,
+              ruolo: accountData.ruolo,
+              permessi: accountData.permessi
+            });
+            
+            console.log(`✅ RAILWAY - Account ${accountData.email} aggiornato`);
+          } else {
+            // Crea nuovo account
+            const newUser = await User.create(accountData);
+            console.log(`✅ RAILWAY - Account ${accountData.email} creato con ID: ${newUser.id}`);
+          }
+          
+        } catch (accountError) {
+          console.error(`❌ RAILWAY - Errore account ${accountData.email}:`, accountError.message);
+        }
+      }
+      
+      // Verifica finale account condivisi
+      const staffUser = await User.findOne({ where: { email: 'staff@padus.com' } });
+      const adminUser = await User.findOne({ where: { email: 'admin@padus.com' } });
+      
+      console.log('🎯 RAILWAY - STATO ACCOUNT CONDIVISI:');
+      console.log(`   Staff (staff@padus.com): ${staffUser ? '✅ ATTIVO' : '❌ MANCANTE'}`);
+      console.log(`   Admin (admin@padus.com): ${adminUser ? '✅ ATTIVO' : '❌ MANCANTE'}`);
+      
+      if (staffUser && adminUser) {
+        console.log('🔑 RAILWAY - ACCOUNT CONDIVISI PRONTI PER CROSS-DEVICE!');
+        console.log('📱 Credenziali: staff@padus.com / staff123');
+        console.log('👑 Credenziali: admin@padus.com / admin123');
       }
       
       console.log('🎉 RAILWAY - Auto-inizializzazione database completata!');
