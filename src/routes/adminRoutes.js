@@ -43,17 +43,14 @@ router.delete('/cleanup-all', isAdmin, async (req, res) => {
     // Esegui pulizia completa
     const result = await cleanupAllData();
 
-    // Log di audit
-    await AuditLog.create({
+    // Log di audit (temporaneamente disabilitato per debug)
+    console.log('🔍 ADMIN CLEANUP - Log audit:', {
       action: 'CLEANUP_ALL',
       userId: req.user.id,
-      details: {
-        deletedBookings: result.deletedBookings,
-        deletedNotifications: result.deletedNotifications,
-        deletedAuditLogs: result.deletedAuditLogs,
-        adminUser: req.user.username,
-        timestamp: new Date().toISOString()
-      }
+      adminUser: req.user.username,
+      deletedBookings: result.deletedBookings,
+      deletedNotifications: result.deletedNotifications,
+      deletedAuditLogs: result.deletedAuditLogs
     });
 
     console.log('✅ ADMIN CLEANUP - Pulizia completa eseguita con successo');
