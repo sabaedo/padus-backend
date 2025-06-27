@@ -20,6 +20,9 @@ const {
 // Import funzione di pulizia
 const { cleanupAllData } = require('../scripts/cleanupAll');
 
+// Import modelli
+const { AuditLog } = require('../models');
+
 // Applica autenticazione a tutte le route
 router.use(authenticate);
 
