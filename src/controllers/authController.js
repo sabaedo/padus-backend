@@ -279,11 +279,187 @@ const logout = async (req, res) => {
   });
 };
 
+// 🚀 NUOVO: Login specifico per account condivisi (cross-device)
+// @route   POST /api/auth/login-shared
+// @access  Public  
+const loginShared = async (req, res) => {
+  try {
+    console.log('🔑 LOGIN SHARED - Richiesta ricevuta:', req.body);
+    
+    // Controllo validazione
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      console.log('❌ Errori validazione:', errors.array());
+      return res.status(400).json({
+        success: false,
+        message: 'Dati non validi',
+        errors: errors.array()
+      });
+    }
+
+    const { email, password } = req.body;
+    
+    console.log('🔍 Cerco utente con email:', email);
+
+    // Trova utente con email specifica per account condivisi
+    const user = await User.findOne({ 
+      where: { 
+        email: email,
+        attivo: true // Solo account attivi
+      } 
+    });
+    
+    if (!user) {
+      console.log('❌ Utente non trovato:', email);
+      return res.status(401).json({
+        success: false,
+        message: 'Credenziali non valide'
+      });
+    }
+    
+    console.log('✅ Utente trovato:', {
+      id: user.id,
+      email: user.email,
+      ruolo: user.ruolo,
+      permessi: user.permessi
+    });
+
+    // Verifica password
+    const isPasswordValid = await user.checkPassword(password);
+    if (!isPasswordValid) {
+      console.log('❌ Password non valida per:', email);
+      return res.status(401).json({
+        success: false,
+        message: 'Credenziali non valide'
+      });
+    }
+    
+    console.log('✅ Password verificata per:', email);
+
+    // Aggiorna ultimo accesso
+    await user.update({ ultimoAccesso: new Date() });
+    
+    console.log('✅ Ultimo accesso aggiornato');
+
+    // Log audit login
+    try {
+      await AuditService.logLogin(user.id, req);
+      console.log('✅ Audit log salvato');
+    } catch (auditError) {
+      console.log('⚠️ Errore audit log (non critico):', auditError.message);
+    }
+
+    // 🔑 GENERA TOKEN JWT SPECIFICO PER CROSS-DEVICE
+    const tokenPayload = {
+      id: user.id,
+      email: user.email,
+      ruolo: user.ruolo,
+      permessi: user.permessi,
+      type: 'shared-account', // Identifica come account condiviso
+      iat: Math.floor(Date.now() / 1000),
+      exp: Math.floor(Date.now() / 1000) + (30 * 24 * 60 * 60) // 30 giorni
+    };
+    
+    const token = jwt.sign(tokenPayload, process.env.JWT_SECRET);
+    console.log('🔑 Token JWT generato per:', email);
+
+    // Prepara risposta utente (senza password)
+    const userResponse = {
+      id: user.id,
+      nome: user.nome,
+      cognome: user.cognome,
+      email: user.email,
+      ruolo: user.ruolo,
+      permessi: user.permessi,
+      livelloPermessi: user.permessi, // Alias per compatibilità frontend
+      attivo: user.attivo,
+      ultimoAccesso: user.ultimoAccesso,
+      dataCreazione: user.createdAt,
+      lastLogin: user.ultimoAccesso // Alias per compatibilità
+    };
+    
+    console.log('✅ LOGIN SHARED COMPLETATO per:', email);
+
+    res.json({
+      success: true,
+      message: 'Login effettuato con successo',
+      data: {
+        user: userResponse,
+        token,
+        permessi: user.getPermessiDettaglio(),
+        tokenType: 'shared-account'
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ ERRORE LOGIN SHARED:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Errore interno del server durante il login'
+    });
+  }
+};
+
+// 🔑 NUOVO: Verifica token per account condivisi
+// @route   GET /api/auth/verify-shared
+// @access  Private
+const verifySharedToken = async (req, res) => {
+  try {
+    console.log('🔍 VERIFY SHARED TOKEN - Richiesta ricevuta');
+    
+    // Il token è già stato verificato dal middleware auth
+    const user = req.user;
+    
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Token non valido'
+      });
+    }
+    
+    console.log('✅ Token valido per utente:', user.email);
+
+    // Prepara risposta utente
+    const userResponse = {
+      id: user.id,
+      nome: user.nome,
+      cognome: user.cognome,
+      email: user.email,
+      ruolo: user.ruolo,
+      permessi: user.permessi,
+      livelloPermessi: user.permessi, // Alias per compatibilità frontend
+      attivo: user.attivo,
+      ultimoAccesso: user.ultimoAccesso,
+      dataCreazione: user.createdAt,
+      lastLogin: user.ultimoAccesso // Alias per compatibilità
+    };
+
+    res.json({
+      success: true,
+      data: {
+        user: userResponse,
+        permessi: user.getPermessiDettaglio(),
+        tokenType: 'shared-account',
+        isValid: true
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ ERRORE VERIFY SHARED TOKEN:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Errore interno del server'
+    });
+  }
+};
+
 module.exports = {
   register,
   login,
   getMe,
   updateProfile,
   changePassword,
-  logout
+  logout,
+  loginShared,
+  verifySharedToken
 }; 

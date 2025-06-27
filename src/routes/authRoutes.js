@@ -8,7 +8,9 @@ const {
   getMe,
   updateProfile,
   changePassword,
-  logout
+  logout,
+  loginShared,
+  verifySharedToken
 } = require('../controllers/authController');
 
 // Import middleware
@@ -18,9 +20,15 @@ const { loginLimiter, registerLimiter } = require('../middleware/rateLimiter');
 // Import validators
 const { registerValidator, loginValidator } = require('../validators/authValidators');
 
-// Public routes
+// 🚀 NUOVE ROUTE PUBBLICHE PER ACCOUNT CONDIVISI
+router.post('/login-shared', loginLimiter, loginValidator, loginShared);
+
+// Public routes (esistenti)
 router.post('/register', registerLimiter, registerValidator, register);
 router.post('/login', loginLimiter, loginValidator, login);
+
+// 🔑 ROUTE PROTETTE PER ACCOUNT CONDIVISI
+router.get('/verify-shared', authenticate, verifySharedToken);
 
 // Private routes (require authentication)
 router.use(authenticate); // Applica autenticazione a tutte le route sottostanti
