@@ -35,8 +35,9 @@ const Booking = sequelize.define('Booking', {
     type: DataTypes.STRING,
     allowNull: false,
     validate: {
-      notEmpty: true,
-      is: /^[+]?[\d\s\-\(\)]{8,20}$/
+      notEmpty: {
+        msg: "Il numero di telefono è obbligatorio."
+      }
     }
   },
   
