@@ -96,25 +96,15 @@ const Booking = sequelize.define('Booking', {
   // Dati evento
   nomeEvento: {
     type: DataTypes.STRING,
-    allowNull: true,
-    validate: {
-      len: [3, 200]
-    }
+    allowNull: true
   },
   numeroPartecipanti: {
     type: DataTypes.INTEGER,
-    allowNull: true,
-    validate: {
-      min: 1,
-      max: 500
-    }
+    allowNull: true
   },
   tipoMenu: {
     type: DataTypes.STRING,
-    allowNull: true,
-    validate: {
-      len: [3, 100]
-    }
+    allowNull: true
   },
   allergie: {
     type: DataTypes.TEXT,
@@ -122,10 +112,7 @@ const Booking = sequelize.define('Booking', {
   },
   pacchetto: {
     type: DataTypes.STRING,
-    allowNull: true,
-    validate: {
-      len: [3, 200]
-    }
+    allowNull: true
   },
   
   // Area/sala prenotazione
