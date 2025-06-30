@@ -35,9 +35,8 @@ const Booking = sequelize.define('Booking', {
     type: DataTypes.STRING,
     allowNull: false,
     validate: {
-      notEmpty: {
-        msg: "Il numero di telefono è obbligatorio."
-      }
+      notEmpty: true,
+      is: /^[+]?[\d\s\-\(\)]{8,20}$/
     }
   },
   
@@ -96,15 +95,25 @@ const Booking = sequelize.define('Booking', {
   // Dati evento
   nomeEvento: {
     type: DataTypes.STRING,
-    allowNull: true
+    allowNull: true,
+    validate: {
+      len: [3, 200]
+    }
   },
   numeroPartecipanti: {
     type: DataTypes.INTEGER,
-    allowNull: true
+    allowNull: true,
+    validate: {
+      min: 1,
+      max: 500
+    }
   },
   tipoMenu: {
     type: DataTypes.STRING,
-    allowNull: true
+    allowNull: true,
+    validate: {
+      len: [3, 100]
+    }
   },
   allergie: {
     type: DataTypes.TEXT,
@@ -112,7 +121,10 @@ const Booking = sequelize.define('Booking', {
   },
   pacchetto: {
     type: DataTypes.STRING,
-    allowNull: true
+    allowNull: true,
+    validate: {
+      len: [3, 200]
+    }
   },
   
   // Area/sala prenotazione
