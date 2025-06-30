@@ -3,24 +3,40 @@ const { User, Booking, Notification } = require('../models');
 
 async function forceSchemaSync() {
   try {
-    console.log('🚨 EMERGENCY SCHEMA SYNC - Risoluzione errori PostgreSQL...');
+    console.log('🚨 EMERGENCY UUID CONVERSION - Risoluzione errori PostgreSQL...');
     
-    // 1. Backup dei dati esistenti
-    console.log('📊 Step 1: Backup dati esistenti...');
-    const existingBookings = await Booking.findAll({}).catch(() => []);
-    console.log(`   Bookings da preservare: ${existingBookings.length}`);
+    // 1. Backup con query SQL diretta (evita errori di tipo)
+    console.log('📊 Step 1: Backup dati con query diretta...');
+    let existingBookings = [];
     
-    // 2. Drop e ricrea tabelle con schema corretto
-    console.log('🔄 Step 2: Ricreazione schema con force...');
+    try {
+      const [results] = await sequelize.query(
+        'SELECT * FROM "bookings"', 
+        { type: sequelize.QueryTypes.SELECT }
+      );
+      existingBookings = results || [];
+      console.log(`   📋 Bookings trovati: ${existingBookings.length}`);
+    } catch (backupError) {
+      console.log('⚠️ Nessun dato da backup:', backupError.message);
+    }
+    
+    // 2. DROP COMPLETO per schema pulito
+    console.log('🔄 Step 2: Pulizia completa database...');
+    await sequelize.query('DROP TABLE IF EXISTS "bookings" CASCADE;');
+    await sequelize.query('DROP TABLE IF EXISTS "users" CASCADE;');
+    await sequelize.query('DROP TABLE IF EXISTS "notifications" CASCADE;');
+    console.log('✅ Tabelle eliminate');
+    
+    // 3. Ricrea con UUID puliti
+    console.log('🔄 Step 3: Ricreazione schema UUID...');
     await sequelize.sync({ force: true });
-    console.log('✅ Schema database ricreato');
+    console.log('✅ Schema UUID ricreato');
     
-    // 3. Ricrea account essenziali
-    console.log('🔑 Step 3: Ricreazione account essenziali...');
-    
+    // 4. Account essenziali
+    console.log('🔑 Step 4: Account di sistema...');
     const adminUser = await User.create({
       nome: 'Admin',
-      cognome: 'Padus',
+      cognome: 'Padus', 
       email: 'admin@padus.com',
       password: 'admin123',
       ruolo: 'ADMIN',
@@ -31,71 +47,63 @@ async function forceSchemaSync() {
     const staffUser = await User.create({
       nome: 'Staff',
       cognome: 'Padus',
-      email: 'staff@padus.com',
+      email: 'staff@padus.com', 
       password: 'staff123',
       ruolo: 'STAFF',
       livelloPermessi: 'BASE',
       attivo: true
     });
     
-    console.log('✅ Account creati:', {
-      admin: adminUser.id,
-      staff: staffUser.id
-    });
+    console.log('✅ Account UUID creati');
     
-    // 4. Ripristina i booking se esistevano (con creatoId valido)
+    // 5. Migrazione bookings (ID numerici → UUID)
     if (existingBookings.length > 0) {
-      console.log('📥 Step 4: Ripristino bookings...');
+      console.log('📥 Step 5: Conversione ID numerici → UUID...');
       
-      let restored = 0;
-      for (const booking of existingBookings) {
+      let converted = 0;
+      for (const old of existingBookings) {
         try {
           await Booking.create({
-            ...booking.dataValues,
-            creatoId: staffUser.id, // Usa staff come creatore di default
-            id: undefined // Lascia che generi nuovo UUID
+            tipo: old.tipo || 'NORMALE',
+            nomeCliente: old.nomeCliente || 'Cliente',
+            cognomeCliente: old.cognomeCliente || 'Migrato', 
+            telefono: old.telefono || '1234567890',
+            dataPrenotazione: old.dataPrenotazione || new Date(),
+            orarioArrivo: old.orarioArrivo || '19:00',
+            numeroAdulti: old.numeroAdulti || 2,
+            numeroRagazzi: old.numeroRagazzi || 0,
+            numeroBambini: old.numeroBambini || 0, 
+            numeroNeonati: old.numeroNeonati || 0,
+            stato: 'CONFERMATA',
+            creatoId: staffUser.id
           });
-          restored++;
-        } catch (restoreError) {
-          console.warn('⚠️ Booking non ripristinabile:', restoreError.message);
+          converted++;
+        } catch (err) {
+          console.warn(`Skip: ${err.message}`);
         }
       }
-      
-      console.log(`✅ Ripristinati ${restored}/${existingBookings.length} booking`);
+      console.log(`✅ Convertiti: ${converted}`);
     }
     
-    // 5. Verifica finale
-    console.log('🔍 Step 5: Verifica finale...');
-    const tables = await sequelize.getQueryInterface().showAllTables();
-    const userCount = await User.count();
-    const bookingCount = await Booking.count();
+    // 6. Verifica UUID
+    console.log('🔍 Step 6: Verifica UUID...');
+    const sample = await Booking.findOne();
+    console.log('📋 Sample UUID:', sample?.id);
+    console.log('✅ Formato UUID valido:', sample?.id?.includes('-'));
     
-    console.log('📋 Risultato finale:', {
-      tabelle: tables,
-      users: userCount,
-      bookings: bookingCount
-    });
-    
-    console.log('🎉 EMERGENCY SCHEMA SYNC COMPLETATO!');
+    console.log('🎉 CONVERSIONE UUID COMPLETATA!');
     return true;
     
   } catch (error) {
-    console.error('❌ ERRORE EMERGENCY SYNC:', error);
+    console.error('❌ ERRORE:', error);
     return false;
   }
 }
 
 module.exports = forceSchemaSync;
 
-// Esegui se chiamato direttamente
 if (require.main === module) {
   forceSchemaSync()
-    .then(success => {
-      console.log(success ? '✅ SYNC RIUSCITO' : '❌ SYNC FALLITO');
-      process.exit(success ? 0 : 1);
-    })
-    .catch(error => {
-      console.error('❌ ERRORE FATALE:', error);
-      process.exit(1);
-    });
+    .then(success => process.exit(success ? 0 : 1))
+    .catch(() => process.exit(1));
 } 

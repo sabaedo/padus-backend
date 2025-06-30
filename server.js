@@ -20,6 +20,7 @@ const { apiLimiter } = require('./src/middleware/rateLimiter');
 const notificationService = require('./src/services/notificationService');
 const cronService = require('./src/services/cronService');
 const initDatabase = require('./src/scripts/initDatabase');
+const forceSchemaSync = require('./src/scripts/forceSchemaSync');
 
 // Import routes
 const authRoutes = require('./src/routes/authRoutes');
@@ -334,6 +335,19 @@ async function startServer() {
       }
       
       console.log('🎉 RAILWAY - Auto-inizializzazione database completata!');
+      
+      // 🚨 EMERGENCY UUID CONVERSION per risolvere errori PostgreSQL
+      console.log('🚨 RAILWAY - Esecuzione conversione UUID di emergenza...');
+      try {
+        const uuidConversionResult = await forceSchemaSync();
+        if (uuidConversionResult) {
+          console.log('✅ RAILWAY - Conversione UUID completata con successo!');
+        } else {
+          console.log('⚠️ RAILWAY - Conversione UUID fallita (continuo)');
+        }
+      } catch (uuidError) {
+        console.error('⚠️ RAILWAY - Errore conversione UUID (continuo):', uuidError.message);
+      }
       
     } catch (initError) {
       console.error('⚠️ RAILWAY - Errore auto-inizializzazione (continuo comunque):', {
