@@ -8,7 +8,8 @@
     "dev": "nodemon server.js",
     "seed": "node src/scripts/seedDatabase.js",
     "test": "node src/scripts/testBackend.js",
-    "init-db": "node src/scripts/initDatabase.js"
+    "init-db": "node src/scripts/initDatabase.js",
+    "emergency-sync": "node src/scripts/forceSchemaSync.js"
   },
   "keywords": [
     "prenotazioni",
